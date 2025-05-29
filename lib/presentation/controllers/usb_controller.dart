@@ -1,4 +1,3 @@
-// lib/presentation/controllers/usb_controller.dart - Eksik özellikler eklendi
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../core/services/mock_usb_service.dart';
@@ -18,7 +17,7 @@ class UsbController extends ChangeNotifier {
   ForceData? _latestForceData;
   String? _errorMessage;
   List<String> _availableDevices = [];
-  String _currentTestScenario = 'sakin_durus'; // ✅ Eklendi
+  String _currentTestScenario = 'sakin_durus';
   
   // Connection state tracking
   UsbConnectionState _connectionState = UsbConnectionState.disconnected;
@@ -30,17 +29,21 @@ class UsbController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<String> get availableDevices => _availableDevices;
   UsbConnectionState get connectionState => _connectionState;
-  String get currentTestScenario => _currentTestScenario; // ✅ Eklendi
+  String get currentTestScenario => _currentTestScenario;
   
-  // ✅ Eksik getter - Data akışı kontrolü
+  // ✅ KRITIK EKSIK GETTER - BU SATIRLARI EKLEYİN!
+  Stream<ForceData>? get forceDataStream {
+    return _mockUsbService?.forceDataStream;
+  }
+  
+  // Data flow status getters
   bool get isDataFlowing => _isConnected && _latestForceData != null;
   
-  // ✅ Data stream status
   bool get hasRecentData {
     if (_latestForceData == null) return false;
     final now = DateTime.now();
     final dataAge = now.difference(_latestForceData!.timestamp);
-    return dataAge.inSeconds < 2; // Son 2 saniyede veri var mı?
+    return dataAge.inSeconds < 2;
   }
 
   // Initialization

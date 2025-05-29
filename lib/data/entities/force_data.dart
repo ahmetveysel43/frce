@@ -1,4 +1,4 @@
-// TODO Implement this library.// lib/domain/entities/force_data.dart
+
 class ForceData {
   final DateTime timestamp;
   
