@@ -1,3 +1,4 @@
+// lib/domain/usecases/calculate_metrics_usecase.dart - Düzeltilmiş
 import 'dart:math' as math;
 import 'package:izforce/core/extensions/list_extensions.dart';
 
@@ -44,7 +45,7 @@ class CalculateMetricsUseCase {
 
   /// Counter Movement Jump metriklerini hesapla
   Future<Map<String, double>> _calculateCMJMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalForce).toList();
+    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
     final samplingRate = data.first.samplingRate;
     
     // Baseline düzeltmesi
@@ -89,7 +90,7 @@ class CalculateMetricsUseCase {
   /// Squat Jump metriklerini hesapla
   Future<Map<String, double>> _calculateSJMetrics(List<ForceData> data) async {
     // SJ için CMJ'den farklı olarak countermovement fazı yok
-    final forces = data.map((d) => d.totalForce).toList();
+    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
     final samplingRate = data.first.samplingRate;
     
     final correctedForces = SignalProcessor.baselineCorrection(forces);
@@ -115,7 +116,7 @@ class CalculateMetricsUseCase {
 
   /// Drop Jump metriklerini hesapla
   Future<Map<String, double>> _calculateDJMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalForce).toList();
+    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
     final samplingRate = data.first.samplingRate;
     
     final correctedForces = SignalProcessor.baselineCorrection(forces);
@@ -139,7 +140,7 @@ class CalculateMetricsUseCase {
 
   /// Balance metriklerini hesapla
   Future<Map<String, double>> _calculateBalanceMetrics(List<ForceData> data) async {
-    final copX = data.map((d) => d.centerOfPressureX).toList();
+    final copX = data.map((d) => d.combinedCoPX).toList(); // ✅ Updated to use combinedCoPX
     
     // Postural sway hesaplamaları
     final copRange = copX.max - copX.min;
@@ -156,7 +157,7 @@ class CalculateMetricsUseCase {
 
   /// Isometric metriklerini hesapla
   Future<Map<String, double>> _calculateIsometricMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalForce).toList();
+    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
     
     final peakForce = forces.max;
     final averageForce = forces.mean;
@@ -173,7 +174,7 @@ class CalculateMetricsUseCase {
 
   /// Landing metriklerini hesapla
   Future<Map<String, double>> _calculateLandingMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalForce).toList();
+    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
     final samplingRate = data.first.samplingRate;
     
     final peakLandingForce = forces.max;
@@ -258,8 +259,8 @@ class CalculateMetricsUseCase {
       );
     }
     
-    final leftTotal = data.map((d) => d.leftTotal).reduce((a, b) => a + b);
-    final rightTotal = data.map((d) => d.rightTotal).reduce((a, b) => a + b);
+    final leftTotal = data.map((d) => d.leftDeckTotal).reduce((a, b) => a + b);  // ✅ Updated property name
+    final rightTotal = data.map((d) => d.rightDeckTotal).reduce((a, b) => a + b); // ✅ Updated property name
     
     return AsymmetryData.fromValues(
       type: AsymmetryType.force,

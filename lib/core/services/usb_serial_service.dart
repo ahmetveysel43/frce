@@ -1,4 +1,4 @@
-// lib/data/services/usb_serial_service.dart
+// lib/core/services/usb_serial_service.dart - Tamamen Düzeltilmiş
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:usb_serial/usb_serial.dart';
@@ -9,28 +9,23 @@ import '../../domain/entities/force_data.dart';
 
 class UsbSerialService {
   UsbPort? _port;
-  StreamSubscription<Uint8List>? _dataSubscription; // ✅ Uint8List olarak düzeltildi
+  StreamSubscription<Uint8List>? _dataSubscription;
   StreamController<ForceData>? _forceDataController;
   
   bool get isConnected => _port != null;
   Stream<ForceData>? get forceDataStream => _forceDataController?.stream;
 
-  // C4 Load Cell kalibrasyonu (her sensör için)
-// mV/V
-// V
-// bit
-  
   Future<bool> initialize() async {
     try {
-      // Permission kontrolü
+      // Permission check
       if (!await _requestPermissions()) {
-        throw const PermissionException('USB izinleri alınamadı');
+        throw const PermissionException('USB permissions failed');
       }
       
       _forceDataController = StreamController<ForceData>.broadcast();
       return true;
     } catch (e) {
-      throw BluetoothException('USB Serial başlatılamadı: $e');
+      throw BluetoothException('USB Serial initialization failed: $e');
     }
   }
 
@@ -43,15 +38,15 @@ class UsbSerialService {
       _port = await device.create();
       
       if (_port == null) {
-        throw const BluetoothException('Port oluşturulamadı');
+        throw const BluetoothException('Port creation failed');
       }
 
-      // 1000Hz için optimal USB Serial ayarları
+      // Optimal USB Serial settings for 1000Hz
       await _port!.open();
       await _port!.setDTR(true);
       await _port!.setRTS(true);
       await _port!.setPortParameters(
-        115200, // Baud rate - 1000Hz için yeterli
+        115200, // Baud rate - sufficient for 1000Hz
         UsbPort.DATABITS_8,
         UsbPort.STOPBITS_1,
         UsbPort.PARITY_NONE,
@@ -60,7 +55,7 @@ class UsbSerialService {
       _startDataListening();
       return true;
     } catch (e) {
-      throw BluetoothException('Cihaza bağlanılamadı: $e');
+      throw BluetoothException('Device connection failed: $e');
     }
   }
 
@@ -68,14 +63,14 @@ class UsbSerialService {
     _dataSubscription = _port!.inputStream?.listen(
       _processRawData,
       onError: (error) {
-        throw DataProcessingException('Veri okuma hatası: $error');
+        throw DataProcessingException('Data reading error: $error');
       },
     );
   }
 
   void _processRawData(Uint8List data) {
     try {
-      // 8 load cell (4 sol + 4 sağ) x 4 byte = 32 byte per sample
+      // 8 load cell (4 left + 4 right) x 4 byte = 32 byte per sample
       // + timestamp (8 byte) = 40 byte total per sample
       const int bytesPerSample = 40;
       
@@ -88,7 +83,7 @@ class UsbSerialService {
         }
       }
     } catch (e) {
-      throw DataProcessingException('Ham veri işlenemedi: $e');
+      throw DataProcessingException('Raw data processing failed: $e');
     }
   }
 
@@ -96,37 +91,38 @@ class UsbSerialService {
     try {
       final byteData = ByteData.sublistView(rawData);
       
-      // Timestamp (ilk 8 byte)
+      // Timestamp (first 8 bytes)
       final timestampMs = byteData.getUint64(0, Endian.little);
       final timestamp = DateTime.fromMillisecondsSinceEpoch(timestampMs);
       
-      // Load cell değerleri (8 x 4 byte = 32 byte)
-      final leftForces = <double>[];
-      final rightForces = <double>[];
+      // Load cell values (8 x 4 byte = 32 byte)
+      final leftDeckForces = <double>[];  // ✅ Fixed parameter name
+      final rightDeckForces = <double>[]; // ✅ Fixed parameter name
       
-      // Sol platform load cell'leri (offset 8-24)
+      // Left platform load cells (offset 8-24)
       for (int i = 0; i < 4; i++) {
         final rawValue = byteData.getInt32(8 + (i * 4), Endian.little);
         final force = _convertRawToForce(rawValue);
-        leftForces.add(force);
+        leftDeckForces.add(force);
       }
       
-      // Sağ platform load cell'leri (offset 24-40)
+      // Right platform load cells (offset 24-40)
       for (int i = 0; i < 4; i++) {
         final rawValue = byteData.getInt32(24 + (i * 4), Endian.little);
         final force = _convertRawToForce(rawValue);
-        rightForces.add(force);
+        rightDeckForces.add(force);
       }
       
+      // ✅ Fixed ForceData constructor
       return ForceData(
         timestamp: timestamp,
-        leftPlateForces: leftForces,
-        rightPlateForces: rightForces,
+        leftDeckForces: leftDeckForces,   // ✅ Correct parameter name
+        rightDeckForces: rightDeckForces, // ✅ Correct parameter name
         samplingRate: AppConstants.samplingRate.toDouble(),
-        sampleIndex: 0, // Gerçek implementasyonda counter olacak
+        sampleIndex: 0, // Real implementation will have counter
       );
     } catch (e) {
-      return null; // Corrupt data ignore
+      return null; // Ignore corrupt data
     }
   }
 
@@ -143,15 +139,15 @@ class UsbSerialService {
     if (!isConnected) return false;
     
     try {
-      // Kalibrasyon komutu gönder
-      const command = 'CAL_START\n'; // ✅ const olarak düzeltildi
+      // Send calibration command
+      const command = 'CAL_START\n';
       await _port!.write(Uint8List.fromList(command.codeUnits));
       
-      // Kalibrasyon yanıtı bekle (basitleştirilmiş)
+      // Wait for calibration response (simplified)
       await Future.delayed(const Duration(seconds: 5));
       return true;
     } catch (e) {
-      throw CalibrationException('Kalibrasyon başarısız: $e');
+      throw CalibrationException('Calibration failed: $e');
     }
   }
 
@@ -163,7 +159,7 @@ class UsbSerialService {
   }
 
   Future<bool> _requestPermissions() async {
-    // Android için USB permissions
+    // Android USB permissions
     final status = await Permission.storage.request();
     return status.isGranted;
   }

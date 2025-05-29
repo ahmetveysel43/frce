@@ -1,33 +1,37 @@
-// lib/app/injection_container.dart - USB dependencies eklenmesi
+// lib/app/injection_container.dart - Düzeltilmiş
 import 'package:get_it/get_it.dart';
-import 'package:izforce/data/repositories/usb_repository.dart';
-import 'package:izforce/presentation/usb_controller.dart';
 import '../data/repositories_impl/athlete_repository_impl.dart';
-import '../data/repositories_impl/usb_repository_impl.dart'; // ✅ Yeni eklendi
+import '../data/repositories_impl/usb_repository_impl.dart';
 import '../domain/repositories/athlete_repository.dart';
+import '../data/repositories/usb_repository.dart';
 import '../domain/usecases/manage_athlete_usecase.dart';
 import '../domain/usecases/calculate_metrics_usecase.dart';
 import '../presentation/controllers/athlete_controller.dart';
 import '../presentation/controllers/test_controller.dart';
+import '../presentation/controllers/usb_controller.dart';
 import '../app/app_controller.dart';
 
 final GetIt sl = GetIt.instance;
 
 Future<void> initializeDependencies() async {
-  debugPrint('🔧 Initializing dependencies...');
+  _debugPrint('🔧 Starting dependency initialization...');
   
   try {
-    // Repositories
+    // ✅ Clear existing registrations to avoid conflicts
+    if (sl.isRegistered<AthleteRepository>()) {
+      await sl.reset();
+    }
+    
+    // Repositories - Singleton
     sl.registerLazySingleton<AthleteRepository>(
       () => AthleteRepositoryImpl(),
     );
     
-    // ✅ USB Repository eklendi
     sl.registerLazySingleton<UsbRepository>(
       () => UsbRepositoryImpl(),
     );
 
-    // Use Cases
+    // Use Cases - Singleton
     sl.registerLazySingleton<ManageAthleteUseCase>(
       () => ManageAthleteUseCase(sl<AthleteRepository>()),
     );
@@ -36,43 +40,73 @@ Future<void> initializeDependencies() async {
       () => const CalculateMetricsUseCase(),
     );
 
-    // Controllers
-    sl.registerLazySingleton<AthleteController>(
-      () => AthleteController(sl<ManageAthleteUseCase>()),
-    );
-    
-    sl.registerLazySingleton<TestController>(
-      () => TestController(sl<CalculateMetricsUseCase>()),
-    );
-    
-    // ✅ USB Controller eklendi
-    sl.registerLazySingleton<UsbController>(
-      () => UsbController(sl<UsbRepository>()),
-    );
-    
+    // Controllers - Singleton (Global state için)
     sl.registerLazySingleton<AppController>(
       () => AppController(sl<AthleteRepository>()),
     );
+    
+    // ✅ UsbController - Singleton (Global USB state)
+    sl.registerLazySingleton<UsbController>(
+      () => UsbController(),
+    );
+    
+    // ✅ AthleteController - Factory (Her kullanımda yeni instance)
+    sl.registerFactory<AthleteController>(
+      () => AthleteController(sl<ManageAthleteUseCase>()),
+    );
+    
+    sl.registerFactory<TestController>(
+      () => TestController(sl<CalculateMetricsUseCase>()),
+    );
 
-    // Initialize mock data
-    final athleteRepo = sl<AthleteRepository>();
-    if (athleteRepo is AthleteRepositoryImpl) {
-      await athleteRepo.addMockData();
-    }
+    // Initialize repositories with mock data
+    await _initializeRepositories();
 
-    // ✅ USB Initialize
-    final usbController = sl<UsbController>();
-    await usbController.initializeUsb();
-
-    debugPrint('✅ Dependencies initialized successfully');
+    _debugPrint('✅ Dependency initialization completed successfully');
   } catch (e, stackTrace) {
-    debugPrint('❌ Failed to initialize dependencies: $e');
-    debugPrint('Stack trace: $stackTrace');
+    _debugPrint('❌ Failed to initialize dependencies: $e');
+    _debugPrint('Stack trace: $stackTrace');
     rethrow;
   }
 }
 
-void debugPrint(String message) {
+Future<void> _initializeRepositories() async {
+  try {
+    // Initialize mock data for athlete repository
+    final athleteRepo = sl<AthleteRepository>();
+    if (athleteRepo is AthleteRepositoryImpl) {
+      await athleteRepo.addMockData();
+      _debugPrint('✅ Mock athlete data initialized');
+    }
+
+    // Initialize USB controller
+    final usbController = sl<UsbController>();
+    await usbController.initializeUsb();
+    _debugPrint('✅ USB controller initialized');
+    
+  } catch (e) {
+    _debugPrint('❌ Repository initialization error: $e');
+    rethrow;
+  }
+}
+
+void _debugPrint(String message) {
   // ignore: avoid_print
   print('[IzForce] $message');
+}
+
+// ✅ Reset dependencies for testing (optional)
+Future<void> resetDependencies() async {
+  _debugPrint('🔄 Resetting dependencies...');
+  await sl.reset();
+}
+
+// ✅ Check registration status (optional)
+void checkRegistrations() {
+  _debugPrint('📋 Checking registrations:');
+  _debugPrint('  - AthleteRepository: ${sl.isRegistered<AthleteRepository>()}');
+  _debugPrint('  - UsbRepository: ${sl.isRegistered<UsbRepository>()}');
+  _debugPrint('  - AppController: ${sl.isRegistered<AppController>()}');
+  _debugPrint('  - UsbController: ${sl.isRegistered<UsbController>()}');
+  _debugPrint('  - AthleteController: ${sl.isRegistered<AthleteController>()}');
 }

@@ -1,4 +1,4 @@
-// lib/data/services/mock_usb_service.dart
+// lib/core/services/mock_usb_service.dart - Düzeltilmiş
 import 'dart:async';
 import 'dart:math' as math;
 import '../../domain/entities/force_data.dart';
@@ -46,13 +46,15 @@ class MockUsbService {
     // Realistic simulation
     final baseForce = 700.0 + 20 * math.sin(time * 2 * math.pi * 0.1);
     
-    final leftForces = List.generate(4, (i) => baseForce / 8 + i * 2);
-    final rightForces = List.generate(4, (i) => baseForce / 8 + i * 2);
+    // ✅ VALD ForceDecks benzeri 4+4 load cell yapısı
+    final leftDeckForces = List.generate(4, (i) => baseForce / 8 + i * 2);
+    final rightDeckForces = List.generate(4, (i) => baseForce / 8 + i * 2);
     
+    // ✅ Yeni ForceData constructor parametreleri
     final forceData = ForceData(
       timestamp: now,
-      leftPlateForces: leftForces,
-      rightPlateForces: rightForces,
+      leftDeckForces: leftDeckForces,    // ✅ leftPlateForces -> leftDeckForces
+      rightDeckForces: rightDeckForces,  // ✅ rightPlateForces -> rightDeckForces
       samplingRate: 1000.0,
       sampleIndex: _sampleIndex,
     );

@@ -1,7 +1,7 @@
-// lib/presentation/screens/home_screen.dart - Basit version
+// lib/presentation/screens/home_screen.dart - Düzeltilmiş
 import 'package:flutter/material.dart';
 import '../controllers/usb_controller.dart';
-import '../../app/injection_container.dart';
+import '../../app/injection_container.dart' as di;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -49,7 +49,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Günaydın',
+                    'Good Morning',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -58,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Force Platform Analysis\'e hoş geldiniz',
+                    'Welcome to Force Platform Analysis',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Bugün ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                    'Today ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -78,7 +78,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             
-            // ✅ USB Status Widget
+            // USB Status Widget
             const USBStatusWidget(),
             
             const SizedBox(height: 24),
@@ -102,7 +102,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Hızlı İşlemler',
+                    'Quick Actions',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -115,11 +115,11 @@ class HomeScreen extends StatelessWidget {
                         child: ElevatedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Yeni Test özelliği yakında!')),
+                              const SnackBar(content: Text('New Test feature coming soon!')),
                             );
                           },
                           icon: const Icon(Icons.add),
-                          label: const Text('Yeni Test'),
+                          label: const Text('New Test'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
@@ -131,13 +131,12 @@ class HomeScreen extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            // Navigator.pushNamed(context, '/athletes');
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Sporcular sayfası yakında!')),
+                              const SnackBar(content: Text('Athletes page coming soon!')),
                             );
                           },
                           icon: const Icon(Icons.people),
-                          label: const Text('Sporcular'),
+                          label: const Text('Athletes'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
@@ -157,7 +156,7 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// ✅ USB Status Widget
+// USB Status Widget
 class USBStatusWidget extends StatefulWidget {
   const USBStatusWidget({super.key});
 
@@ -171,7 +170,7 @@ class _USBStatusWidgetState extends State<USBStatusWidget> {
   @override
   void initState() {
     super.initState();
-    _usbController = sl<UsbController>();
+    _usbController = di.sl<UsbController>();
     _usbController.addListener(_onUsbStatusChanged);
   }
 
@@ -230,7 +229,7 @@ class _USBStatusWidgetState extends State<USBStatusWidget> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  _usbController.isConnected ? 'Bağlı' : 'Bağlı Değil',
+                  _usbController.isConnected ? 'Connected' : 'Not Connected',
                   style: TextStyle(
                     color: _usbController.isConnected ? Colors.green : Colors.grey,
                     fontSize: 12,
@@ -244,7 +243,7 @@ class _USBStatusWidgetState extends State<USBStatusWidget> {
           
           if (_usbController.isConnected && _usbController.latestForceData != null) ...[
             Text(
-              'Toplam Kuvvet: ${_usbController.latestForceData!.totalForce.toStringAsFixed(1)} N',
+              'Total Force: ${_usbController.latestForceData!.totalGRF.toStringAsFixed(1)} N', // ✅ totalForce -> totalGRF
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -261,7 +260,7 @@ class _USBStatusWidgetState extends State<USBStatusWidget> {
                   ? () => _usbController.disconnect()
                   : () => _connectToDevice(),
               icon: Icon(_usbController.isConnected ? Icons.usb_off : Icons.usb),
-              label: Text(_usbController.isConnected ? 'Bağlantıyı Kes' : 'Mock Bağlan'),
+              label: Text(_usbController.isConnected ? 'Disconnect' : 'Mock Connect'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _usbController.isConnected ? Colors.red : Colors.blue,
                 foregroundColor: Colors.white,
@@ -281,8 +280,8 @@ class _USBStatusWidgetState extends State<USBStatusWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success 
-              ? 'Mock USB bağlantısı başarılı! Real-time veri akışı başladı.' 
-              : 'Bağlantı hatası: ${_usbController.errorMessage}'),
+              ? 'Mock USB connection successful! Real-time data stream started.' 
+              : 'Connection error: ${_usbController.errorMessage}'),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );

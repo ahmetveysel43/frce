@@ -1,4 +1,4 @@
-// lib/presentation/controllers/test_controller.dart
+// lib/presentation/controllers/test_controller.dart - Düzeltilmiş
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/force_data.dart';
@@ -26,7 +26,7 @@ class TestController extends ChangeNotifier {
   String? _currentAthleteId;
   TestType? _currentTestType;
   TestParameters? _currentParameters;
-  List<ForceData> _currentData = [];
+  final List<ForceData> _currentData = []; // ✅ Made non-final and initialized
   Map<String, double> _currentMetrics = {};
   String? _errorMessage;
   double? _testProgress;
@@ -64,10 +64,10 @@ class TestController extends ChangeNotifier {
 
   // Real-time metrics
   double get currentTotalForce => 
-      _currentData.isEmpty ? 0.0 : _currentData.last.totalForce;
+      _currentData.isEmpty ? 0.0 : _currentData.last.totalGRF; // ✅ totalForce -> totalGRF
   
   double get currentAsymmetry => 
-      _currentData.isEmpty ? 0.0 : _currentData.last.asymmetryPercentage;
+      _currentData.isEmpty ? 0.0 : _currentData.last.forceSymmetryIndex; // ✅ asymmetryPercentage -> forceSymmetryIndex
 
   // Start test (mock implementation)
   Future<bool> startTest({
@@ -153,7 +153,7 @@ class TestController extends ChangeNotifier {
       final sampleIndex = _currentData.length;
       
       // Simple mock force simulation
-      final baseForce = 700.0; // ~70kg body weight
+      const baseForce = 700.0; // ~70kg body weight
       final time = sampleIndex / 1000.0; // seconds
       final phase = (time * 2 * 3.14159 * 0.5) % (2 * 3.14159);
       
@@ -164,14 +164,14 @@ class TestController extends ChangeNotifier {
         totalForce = baseForce * (1 + 0.8 * ((phase - 3.14159) / 3.14159));
       }
 
-      // Create mock force data
-      final leftForces = List.generate(4, (i) => totalForce / 8 + (i * 2));
-      final rightForces = List.generate(4, (i) => totalForce / 8 + (i * 2));
+      // Create mock force data - ✅ Fixed constructor parameters
+      final leftDeckForces = List.generate(4, (i) => totalForce / 8 + (i * 2));
+      final rightDeckForces = List.generate(4, (i) => totalForce / 8 + (i * 2));
       
       final forceData = ForceData(
         timestamp: now,
-        leftPlateForces: leftForces,
-        rightPlateForces: rightForces,
+        leftDeckForces: leftDeckForces,   // ✅ leftPlateForces -> leftDeckForces
+        rightDeckForces: rightDeckForces, // ✅ rightPlateForces -> rightDeckForces
         samplingRate: 1000.0,
         sampleIndex: sampleIndex,
       );
@@ -243,7 +243,6 @@ class TestController extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
-
 
   @override
   void dispose() {
