@@ -1,15 +1,17 @@
-// lib/presentation/widgets/device_status_widget.dart
+// lib/presentation/widgets/device_status_widget.dart - Provider düzeltmesi
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../app/app_controller.dart';
+import '../controllers/usb_controller.dart';
+import '../../core/enums/usb_connection_state.dart';
 
 class DeviceStatusWidget extends StatelessWidget {
   const DeviceStatusWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppController>(
-      builder: (context, controller, child) {
+    // ✅ Tek Consumer kullan - UsbController zaten provide edilmiş
+    return Consumer<UsbController>(
+      builder: (context, usbController, child) {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -30,54 +32,64 @@ class DeviceStatusWidget extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.bluetooth,
-                    color: controller.isBluetoothConnected ? Colors.blue : Colors.grey,
+                    Icons.usb,
+                    color: usbController.isConnected ? Colors.blue : Colors.grey,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
                   const Text(
-                    'Cihaz Durumu',
+                    'USB Force Platform',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const Spacer(),
-                  _buildStatusIndicator(controller.bluetoothState),
+                  _buildStatusIndicator(usbController.connectionState),
                 ],
               ),
               const SizedBox(height: 16),
               
               _buildStatusRow(
                 'Bağlantı',
-                _getConnectionStatusText(controller.bluetoothState),
-                controller.isBluetoothConnected ? Colors.green : Colors.red,
+                _getConnectionStatusText(usbController.connectionState),
+                usbController.isConnected ? Colors.green : Colors.red,
               ),
               const SizedBox(height: 12),
               
               _buildStatusRow(
                 'Platform',
-                'Mock Device - IzForce 001',
-                Colors.blue,
+                usbController.connectedDeviceId ?? 'Bağlı değil',
+                usbController.isConnected ? Colors.blue : Colors.grey,
               ),
               const SizedBox(height: 12),
               
               _buildStatusRow(
-                'Kalibrasyon',
-                controller.isBluetoothConnected ? 'Hazır' : 'Bekleniyor',
-                controller.isBluetoothConnected ? Colors.green : Colors.orange,
+                'Sampling Rate',
+                usbController.isConnected ? '1000 Hz' : 'Bekleniyor',
+                usbController.isConnected ? Colors.green : Colors.orange,
               ),
               
-              if (!controller.isBluetoothConnected) ...[
-                const SizedBox(height: 16),
+              if (usbController.isConnected && usbController.latestForceData != null) ...[
+                const SizedBox(height: 12),
+                _buildStatusRow(
+                  'Toplam Kuvvet',
+                  '${usbController.latestForceData!.totalForce.toStringAsFixed(1)} N',
+                  Colors.purple,
+                ),
+              ],
+              
+              const SizedBox(height: 16),
+              
+              if (!usbController.isConnected) ...[
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      _showConnectionDialog(context, controller);
+                      _showConnectionDialog(context, usbController);
                     },
-                    icon: const Icon(Icons.bluetooth_connected),
-                    label: const Text('Cihaza Bağlan'),
+                    icon: const Icon(Icons.usb),
+                    label: const Text('USB Cihaza Bağlan'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -89,14 +101,13 @@ class DeviceStatusWidget extends StatelessWidget {
                   ),
                 ),
               ] else ...[
-                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      controller.toggleBluetoothConnection();
+                      usbController.disconnect();
                     },
-                    icon: const Icon(Icons.bluetooth_disabled),
+                    icon: const Icon(Icons.usb_off),
                     label: const Text('Bağlantıyı Kes'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
@@ -109,6 +120,21 @@ class DeviceStatusWidget extends StatelessWidget {
                   ),
                 ),
               ],
+              
+              if (usbController.errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Hata: ${usbController.errorMessage}',
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ],
             ],
           ),
         );
@@ -116,26 +142,26 @@ class DeviceStatusWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIndicator(BluetoothConnectionState state) {
+  Widget _buildStatusIndicator(UsbConnectionState state) {
     Color color;
     IconData icon;
     
     switch (state) {
-      case BluetoothConnectionState.connected:
+      case UsbConnectionState.connected:
         color = Colors.green;
         icon = Icons.check_circle;
         break;
-      case BluetoothConnectionState.connecting:
+      case UsbConnectionState.connecting:
         color = Colors.orange;
         icon = Icons.sync;
         break;
-      case BluetoothConnectionState.error:
+      case UsbConnectionState.error:
         color = Colors.red;
         icon = Icons.error;
         break;
       default:
         color = Colors.grey;
-        icon = Icons.bluetooth_disabled;
+        icon = Icons.usb_off;
     }
 
     return Container(
@@ -192,35 +218,33 @@ class DeviceStatusWidget extends StatelessWidget {
     );
   }
 
-  String _getConnectionStatusText(BluetoothConnectionState state) {
+  String _getConnectionStatusText(UsbConnectionState state) {
     switch (state) {
-      case BluetoothConnectionState.connected:
+      case UsbConnectionState.connected:
         return 'Bağlı';
-      case BluetoothConnectionState.connecting:
+      case UsbConnectionState.connecting:
         return 'Bağlanıyor';
-      case BluetoothConnectionState.error:
+      case UsbConnectionState.error:
         return 'Hata';
-      case BluetoothConnectionState.disconnected:
-      return 'Bağlı Değil';
-    }
+      case UsbConnectionState.disconnected:
+        return 'Bağlı Değil';
+      }
   }
 
-  void _showConnectionDialog(BuildContext context, AppController controller) {
+  void _showConnectionDialog(BuildContext context, UsbController usbController) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cihaz Bağlantısı'),
-        content: const Column(
+        title: const Text('USB Cihaz Bağlantısı'),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Mock modda çalışıyorsunuz.'),
-            SizedBox(height: 8),
-            Text('Gerçek cihaz bağlantısı için:'),
-            SizedBox(height: 8),
-            Text('• Bluetooth\'u açın'),
-            Text('• IzForce platformunu açın'),
-            Text('• Cihazlar menüsünden bağlanın'),
+            const Text('Mock USB Force Platform\'a bağlanıyor...'),
+            const SizedBox(height: 8),
+            const Text('• 1000Hz sampling rate'),
+            const Text('• 8 load cell (4+4)'),
+            const Text('• C4 sınıfı hassasiyet'),
           ],
         ),
         actions: [
@@ -229,17 +253,23 @@ class DeviceStatusWidget extends StatelessWidget {
             child: const Text('İptal'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              controller.toggleBluetoothConnection();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Mock bağlantı başarılı!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              
+              final success = await usbController.connectToDevice('Mock Force Platform');
+              
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success 
+                        ? 'Mock USB bağlantısı başarılı! 1000Hz veri akışı başlatıldı.' 
+                        : 'Bağlantı hatası: ${usbController.errorMessage}'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
             },
-            child: const Text('Mock Bağlantı'),
+            child: const Text('Mock Bağlan'),
           ),
         ],
       ),

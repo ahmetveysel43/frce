@@ -1,25 +1,10 @@
+// lib/presentation/screens/home_screen.dart - Basit version
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../app/app_controller.dart';
-import '../widgets/dashboard_card.dart';
-import '../widgets/device_status_widget.dart';
-import '../widgets/quick_stats_widget.dart';
+import '../controllers/usb_controller.dart';
+import '../../app/injection_container.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
-
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppController>().refresh();
-    });
-  }
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,160 +12,261 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
-          'IzForce',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          'IzForce Dashboard',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Notifications screen
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              // TODO: Settings screen
-            },
+            icon: const Icon(Icons.settings),
+            onPressed: () {},
           ),
         ],
       ),
-      body: Consumer<AppController>(
-        builder: (context, controller, child) {
-          if (controller.isLoading) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Yükleniyor...'),
-                ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.blue, Colors.blueAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-            );
-          }
-
-          if (controller.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Hata: ${controller.errorMessage}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => controller.refresh(),
-                    child: const Text('Yeniden Dene'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => controller.refresh(),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome Section
-                  _buildWelcomeSection(context),
-                  const SizedBox(height: 24),
-
-                  // Device Status
-                  const DeviceStatusWidget(),
-                  const SizedBox(height: 24),
-
-                  // Quick Stats
-                  QuickStatsWidget(
-                    athleteCount: controller.athleteCount,
-                    recentAthletes: controller.athletes,
+                  const Text(
+                    'Günaydın',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Main Actions Grid
-                  _buildMainActions(context),
-                  const SizedBox(height: 24),
-
-                  // Secondary Actions
-                  _buildSecondaryActions(context),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Force Platform Analysis\'e hoş geldiniz',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bugün ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               ),
             ),
-          );
-        },
+            const SizedBox(height: 24),
+            
+            // ✅ USB Status Widget
+            const USBStatusWidget(),
+            
+            const SizedBox(height: 24),
+            
+            // Quick Actions
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hızlı İşlemler',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Yeni Test özelliği yakında!')),
+                            );
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('Yeni Test'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            // Navigator.pushNamed(context, '/athletes');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Sporcular sayfası yakında!')),
+                            );
+                          },
+                          icon: const Icon(Icons.people),
+                          label: const Text('Sporcular'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildWelcomeSection(BuildContext context) {
-    final hour = DateTime.now().hour;
-    String greeting;
-    if (hour < 12) {
-      greeting = 'Günaydın';
-    } else if (hour < 18) {
-      greeting = 'İyi günler';
-    } else {
-      greeting = 'İyi akşamlar';
+// ✅ USB Status Widget
+class USBStatusWidget extends StatefulWidget {
+  const USBStatusWidget({super.key});
+
+  @override
+  State<USBStatusWidget> createState() => _USBStatusWidgetState();
+}
+
+class _USBStatusWidgetState extends State<USBStatusWidget> {
+  late final UsbController _usbController;
+
+  @override
+  void initState() {
+    super.initState();
+    _usbController = sl<UsbController>();
+    _usbController.addListener(_onUsbStatusChanged);
+  }
+
+  @override
+  void dispose() {
+    _usbController.removeListener(_onUsbStatusChanged);
+    super.dispose();
+  }
+
+  void _onUsbStatusChanged() {
+    if (mounted) {
+      setState(() {});
     }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[400]!, Colors.blue[600]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            greeting,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.usb,
+                color: _usbController.isConnected ? Colors.blue : Colors.grey,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'USB Force Platform',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (_usbController.isConnected ? Colors.green : Colors.grey)
+                      .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _usbController.isConnected ? 'Bağlı' : 'Bağlı Değil',
+                  style: TextStyle(
+                    color: _usbController.isConnected ? Colors.green : Colors.grey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Force Platform Analysis\'e hoş geldiniz',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 16),
+          
+          if (_usbController.isConnected && _usbController.latestForceData != null) ...[
+            Text(
+              'Toplam Kuvvet: ${_usbController.latestForceData!.totalForce.toStringAsFixed(1)} N',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.purple,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Bugün ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
+            const SizedBox(height: 16),
+          ],
+          
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _usbController.isConnected 
+                  ? () => _usbController.disconnect()
+                  : () => _connectToDevice(),
+              icon: Icon(_usbController.isConnected ? Icons.usb_off : Icons.usb),
+              label: Text(_usbController.isConnected ? 'Bağlantıyı Kes' : 'Mock Bağlan'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _usbController.isConnected ? Colors.red : Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
         ],
@@ -188,122 +274,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildMainActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ana İşlemler',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+  void _connectToDevice() async {
+    final success = await _usbController.connectToDevice('Mock Force Platform');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success 
+              ? 'Mock USB bağlantısı başarılı! Real-time veri akışı başladı.' 
+              : 'Bağlantı hatası: ${_usbController.errorMessage}'),
+          backgroundColor: success ? Colors.green : Colors.red,
         ),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.1,
-          children: [
-            DashboardCard(
-              title: 'Hızlı Test',
-              subtitle: 'Test başlat',
-              icon: Icons.play_circle_filled,
-              color: Colors.green,
-              onTap: () {
-                // TODO: Navigate to quick test
-                _showNotImplemented(context, 'Hızlı Test');
-              },
-            ),
-            DashboardCard(
-              title: 'Atletler',
-              subtitle: '${context.read<AppController>().athleteCount} atlet',
-              icon: Icons.people,
-              color: Colors.blue,
-              onTap: () {
-                // TODO: Navigate to athletes screen
-                _showNotImplemented(context, 'Atlet Yönetimi');
-              },
-            ),
-            DashboardCard(
-              title: 'Test Geçmişi',
-              subtitle: 'Sonuçları görüntüle',
-              icon: Icons.history,
-              color: Colors.orange,
-              onTap: () {
-                // TODO: Navigate to test history
-                _showNotImplemented(context, 'Test Geçmişi');
-              },
-            ),
-            DashboardCard(
-              title: 'Analitik',
-              subtitle: 'Veri analizi',
-              icon: Icons.analytics,
-              color: Colors.purple,
-              onTap: () {
-                // TODO: Navigate to analytics
-                _showNotImplemented(context, 'Analitik');
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSecondaryActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Diğer İşlemler',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: DashboardCard(
-                title: 'Kalibrasyon',
-                subtitle: 'Platform ayarları',
-                icon: Icons.tune,
-                color: Colors.teal,
-                onTap: () {
-                  _showNotImplemented(context, 'Kalibrasyon');
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: DashboardCard(
-                title: 'Dışa Aktar',
-                subtitle: 'Veri paylaşımı',
-                icon: Icons.file_download,
-                color: Colors.indigo,
-                onTap: () {
-                  _showNotImplemented(context, 'Dışa Aktarma');
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  void _showNotImplemented(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature özelliği yakında eklenecek!'),
-        backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    }
   }
 }

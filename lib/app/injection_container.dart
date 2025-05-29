@@ -1,6 +1,9 @@
-// lib/app/injection_container.dart
+// lib/app/injection_container.dart - USB dependencies eklenmesi
 import 'package:get_it/get_it.dart';
+import 'package:izforce/data/repositories/usb_repository.dart';
+import 'package:izforce/presentation/usb_controller.dart';
 import '../data/repositories_impl/athlete_repository_impl.dart';
+import '../data/repositories_impl/usb_repository_impl.dart'; // ✅ Yeni eklendi
 import '../domain/repositories/athlete_repository.dart';
 import '../domain/usecases/manage_athlete_usecase.dart';
 import '../domain/usecases/calculate_metrics_usecase.dart';
@@ -17,6 +20,11 @@ Future<void> initializeDependencies() async {
     // Repositories
     sl.registerLazySingleton<AthleteRepository>(
       () => AthleteRepositoryImpl(),
+    );
+    
+    // ✅ USB Repository eklendi
+    sl.registerLazySingleton<UsbRepository>(
+      () => UsbRepositoryImpl(),
     );
 
     // Use Cases
@@ -37,6 +45,11 @@ Future<void> initializeDependencies() async {
       () => TestController(sl<CalculateMetricsUseCase>()),
     );
     
+    // ✅ USB Controller eklendi
+    sl.registerLazySingleton<UsbController>(
+      () => UsbController(sl<UsbRepository>()),
+    );
+    
     sl.registerLazySingleton<AppController>(
       () => AppController(sl<AthleteRepository>()),
     );
@@ -46,6 +59,10 @@ Future<void> initializeDependencies() async {
     if (athleteRepo is AthleteRepositoryImpl) {
       await athleteRepo.addMockData();
     }
+
+    // ✅ USB Initialize
+    final usbController = sl<UsbController>();
+    await usbController.initializeUsb();
 
     debugPrint('✅ Dependencies initialized successfully');
   } catch (e, stackTrace) {
