@@ -1,9 +1,8 @@
-// lib/core/services/usb_serial_service.dart - Tamamen Düzeltilmiş
+// lib/core/services/usb_serial_service.dart - Tamamen Yeniden Yazılmış
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:usb_serial/usb_serial.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/errors/exceptions.dart';
 import '../../domain/entities/force_data.dart';
 
@@ -11,6 +10,7 @@ class UsbSerialService {
   UsbPort? _port;
   StreamSubscription<Uint8List>? _dataSubscription;
   StreamController<ForceData>? _forceDataController;
+  int _sampleIndex = 0;
   
   bool get isConnected => _port != null;
   Stream<ForceData>? get forceDataStream => _forceDataController?.stream;
@@ -96,8 +96,8 @@ class UsbSerialService {
       final timestamp = DateTime.fromMillisecondsSinceEpoch(timestampMs);
       
       // Load cell values (8 x 4 byte = 32 byte)
-      final leftDeckForces = <double>[];  // ✅ Fixed parameter name
-      final rightDeckForces = <double>[]; // ✅ Fixed parameter name
+      final leftDeckForces = <double>[];
+      final rightDeckForces = <double>[];
       
       // Left platform load cells (offset 8-24)
       for (int i = 0; i < 4; i++) {
@@ -113,17 +113,84 @@ class UsbSerialService {
         rightDeckForces.add(force);
       }
       
-      // ✅ Fixed ForceData constructor
+      // Calculate required parameters from raw load cells
+      final leftGRF = leftDeckForces.reduce((a, b) => a + b);   // Total left force
+      final rightGRF = rightDeckForces.reduce((a, b) => a + b); // Total right force
+      final totalGRF = leftGRF + rightGRF;                      // Total force
+      
+      // Calculate Center of Pressure
+      final leftCoPX = _calculateCoPX(leftDeckForces);   // Center of Pressure X
+      final leftCoPY = _calculateCoPY(leftDeckForces);   // Center of Pressure Y
+      final rightCoPX = _calculateCoPX(rightDeckForces); // Center of Pressure X
+      final rightCoPY = _calculateCoPY(rightDeckForces); // Center of Pressure Y
+      
+      // Calculate metrics
+      final asymmetryIndex = totalGRF > 0 ? (leftGRF - rightGRF).abs() / totalGRF : 0.0;
+      final stabilityIndex = 0.8; // Placeholder - real calculation needs multiple samples
+      final loadRate = 0.0;       // Placeholder - real calculation needs time derivative
+      
+      // FIXED ForceData constructor with ALL required parameters
       return ForceData(
         timestamp: timestamp,
-        leftDeckForces: leftDeckForces,   // ✅ Correct parameter name
-        rightDeckForces: rightDeckForces, // ✅ Correct parameter name
-        samplingRate: AppConstants.samplingRate.toDouble(),
-        sampleIndex: 0, // Real implementation will have counter
+        
+        // Required parameters
+        leftGRF: leftGRF,
+        leftCoPX: leftCoPX,
+        leftCoPY: leftCoPY,
+        rightGRF: rightGRF,
+        rightCoPX: rightCoPX,
+        rightCoPY: rightCoPY,
+        totalGRF: totalGRF,
+        asymmetryIndex: asymmetryIndex,
+        stabilityIndex: stabilityIndex,
+        loadRate: loadRate,
+        
+        // Optional parameters
+        leftDeckForces: leftDeckForces,
+        rightDeckForces: rightDeckForces,
+        samplingRate: 1000.0,
+        sampleIndex: _sampleIndex++,
       );
     } catch (e) {
       return null; // Ignore corrupt data
     }
+  }
+
+  // Center of Pressure hesaplama metodları
+  double _calculateCoPX(List<double> loadCellForces) {
+    if (loadCellForces.length != 4) return 0.0;
+    
+    // Load cell X positions (example for 40x60cm platform)
+    // [front-left, front-right, back-left, back-right]
+    const positions = [-100.0, 100.0, -100.0, 100.0]; // mm
+    
+    final totalForce = loadCellForces.reduce((a, b) => a + b);
+    if (totalForce == 0) return 0.0;
+    
+    double momentX = 0.0;
+    for (int i = 0; i < 4; i++) {
+      momentX += loadCellForces[i] * positions[i];
+    }
+    
+    return momentX / totalForce; // mm
+  }
+
+  double _calculateCoPY(List<double> loadCellForces) {
+    if (loadCellForces.length != 4) return 0.0;
+    
+    // Load cell Y positions (example)
+    // [front-left, front-right, back-left, back-right] 
+    const positions = [150.0, 150.0, -150.0, -150.0]; // mm
+    
+    final totalForce = loadCellForces.reduce((a, b) => a + b);
+    if (totalForce == 0) return 0.0;
+    
+    double momentY = 0.0;
+    for (int i = 0; i < 4; i++) {
+      momentY += loadCellForces[i] * positions[i];
+    }
+    
+    return momentY / totalForce; // mm
   }
 
   double _convertRawToForce(int rawValue) {
@@ -156,6 +223,7 @@ class UsbSerialService {
     await _port?.close();
     _port = null;
     await _forceDataController?.close();
+    _sampleIndex = 0;
   }
 
   Future<bool> _requestPermissions() async {

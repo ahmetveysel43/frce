@@ -1,6 +1,7 @@
+// lib/data/models/test_result_model.dart - Düzeltilmiş
 import '../../domain/entities/test_result.dart';
 import '../../core/constants/test_constants.dart';
-import 'force_data_model.dart';
+import 'force_data_model.dart'; // ✅ Import eklendi
 
 class TestResultModel {
   final String id;
@@ -9,7 +10,7 @@ class TestResultModel {
   final String startTime; // ISO string format
   final String? endTime; // ISO string format
   final String status; // TestStatus enum string
-  final List<ForceDataModel> rawData;
+  final List<ForceDataModel> rawData; // ✅ Artık tanımlı
   final Map<String, double> metrics;
   final double? qualityScore;
   final String? notes;
@@ -38,7 +39,7 @@ class TestResultModel {
       'startTime': startTime,
       'endTime': endTime,
       'status': status,
-      'rawData': rawData.map((data) => data.toJson()).toList(),
+      'rawData': rawData.map((data) => data.toJson()).toList(), // ✅ Safe - non-nullable
       'metrics': metrics,
       'qualityScore': qualityScore,
       'notes': notes,
@@ -55,7 +56,7 @@ class TestResultModel {
       endTime: json['endTime'] as String?,
       status: json['status'] as String,
       rawData: (json['rawData'] as List)
-          .map((data) => ForceDataModel.fromJson(data as Map<String, dynamic>))
+          .map((data) => ForceDataModel.fromJson(data as Map<String, dynamic>)) // ✅ Artık tanımlı
           .toList(),
       metrics: Map<String, double>.from(json['metrics'] as Map),
       qualityScore: json['qualityScore'] as double?,
@@ -73,7 +74,7 @@ class TestResultModel {
       startTime: DateTime.parse(startTime),
       endTime: endTime != null ? DateTime.parse(endTime!) : null,
       status: _parseTestStatus(status),
-      rawData: rawData.map((model) => model.toEntity()).toList(),
+      rawData: rawData.map((model) => model.toEntity()).toList(), // ✅ Safe - non-nullable
       metrics: metrics,
       qualityScore: qualityScore,
       notes: notes,
@@ -89,7 +90,7 @@ class TestResultModel {
       startTime: testResult.startTime.toIso8601String(),
       endTime: testResult.endTime?.toIso8601String(),
       status: _testStatusToString(testResult.status),
-      rawData: testResult.rawData.map((entity) => ForceDataModel.fromEntity(entity)).toList(),
+      rawData: testResult.rawData.map((entity) => ForceDataModel.fromEntity(entity)).toList(), // ✅ Artık tanımlı
       metrics: testResult.metrics,
       qualityScore: testResult.qualityScore,
       notes: testResult.notes,
@@ -109,7 +110,7 @@ class TestResultModel {
     
     // Mock force data oluştur
     final mockRawData = List.generate(points, (index) {
-      return ForceDataModel.mock(
+      return ForceDataModel.mock( // ✅ Artık tanımlı
         timestamp: now.add(Duration(milliseconds: index)),
         totalForce: 800 + (index * 2), // Artan kuvvet
         index: index,
@@ -145,7 +146,7 @@ class TestResultModel {
     );
   }
 
-  // Helper methods
+  // Helper methods (aynı kalacak...)
   static TestType _parseTestType(String testType) {
     switch (testType) {
       case 'counterMovementJump':

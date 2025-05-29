@@ -1,5 +1,6 @@
-// lib/presentation/controllers/test_controller.dart - Düzeltilmiş
+// lib/presentation/controllers/test_controller.dart - Tamamen Düzeltilmiş
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/force_data.dart';
 import '../../domain/usecases/calculate_metrics_usecase.dart';
@@ -26,7 +27,7 @@ class TestController extends ChangeNotifier {
   String? _currentAthleteId;
   TestType? _currentTestType;
   TestParameters? _currentParameters;
-  final List<ForceData> _currentData = []; // ✅ Made non-final and initialized
+  final List<ForceData> _currentData = [];
   Map<String, double> _currentMetrics = {};
   String? _errorMessage;
   double? _testProgress;
@@ -64,10 +65,11 @@ class TestController extends ChangeNotifier {
 
   // Real-time metrics
   double get currentTotalForce => 
-      _currentData.isEmpty ? 0.0 : _currentData.last.totalGRF; // ✅ totalForce -> totalGRF
+      _currentData.isEmpty ? 0.0 : _currentData.last.totalGRF;
   
+  // ✅ FIXED: Use asymmetryIndex instead of forceSymmetryIndex
   double get currentAsymmetry => 
-      _currentData.isEmpty ? 0.0 : _currentData.last.forceSymmetryIndex; // ✅ asymmetryPercentage -> forceSymmetryIndex
+      _currentData.isEmpty ? 0.0 : _currentData.last.asymmetryIndex;
 
   // Start test (mock implementation)
   Future<bool> startTest({
@@ -155,23 +157,53 @@ class TestController extends ChangeNotifier {
       // Simple mock force simulation
       const baseForce = 700.0; // ~70kg body weight
       final time = sampleIndex / 1000.0; // seconds
-      final phase = (time * 2 * 3.14159 * 0.5) % (2 * 3.14159);
+      final phase = (time * 2 * math.pi * 0.5) % (2 * math.pi);
       
       double totalForce = baseForce;
-      if (phase < 3.14159) {
-        totalForce = baseForce * (1 - 0.3 * (phase / 3.14159));
+      if (phase < math.pi) {
+        totalForce = baseForce * (1 - 0.3 * (phase / math.pi));
       } else {
-        totalForce = baseForce * (1 + 0.8 * ((phase - 3.14159) / 3.14159));
+        totalForce = baseForce * (1 + 0.8 * ((phase - math.pi) / math.pi));
       }
 
-      // Create mock force data - ✅ Fixed constructor parameters
-      final leftDeckForces = List.generate(4, (i) => totalForce / 8 + (i * 2));
-      final rightDeckForces = List.generate(4, (i) => totalForce / 8 + (i * 2));
+      // Calculate left and right forces
+      final leftForce = totalForce * 0.48; // Slight asymmetry
+      final rightForce = totalForce * 0.52;
       
+      // Calculate Center of Pressure (mock)
+      final leftCoPX = math.sin(time * 2) * 5; // ±5mm oscillation
+      final leftCoPY = math.cos(time * 1.5) * 8; // ±8mm oscillation
+      final rightCoPX = math.sin(time * 1.8) * 6;
+      final rightCoPY = math.cos(time * 2.2) * 7;
+      
+      // Calculate metrics
+      final asymmetryIndex = (leftForce - rightForce).abs() / totalForce;
+      final stabilityIndex = 0.8 + math.sin(time) * 0.15; // 0.65-0.95 range
+      final loadRate = (totalForce - baseForce) * 10; // Mock load rate
+      
+      // Mock load cell forces (4 per platform)
+      final leftDeckForces = List.generate(4, (i) => leftForce / 4 + (i * 2));
+      final rightDeckForces = List.generate(4, (i) => rightForce / 4 + (i * 2));
+      
+      // ✅ FIXED: ForceData constructor with ALL required parameters
       final forceData = ForceData(
         timestamp: now,
-        leftDeckForces: leftDeckForces,   // ✅ leftPlateForces -> leftDeckForces
-        rightDeckForces: rightDeckForces, // ✅ rightPlateForces -> rightDeckForces
+        
+        // Required parameters
+        leftGRF: leftForce,
+        leftCoPX: leftCoPX,
+        leftCoPY: leftCoPY,
+        rightGRF: rightForce,
+        rightCoPX: rightCoPX,
+        rightCoPY: rightCoPY,
+        totalGRF: totalForce,
+        asymmetryIndex: asymmetryIndex,
+        stabilityIndex: stabilityIndex,
+        loadRate: loadRate,
+        
+        // Optional parameters
+        leftDeckForces: leftDeckForces,
+        rightDeckForces: rightDeckForces,
         samplingRate: 1000.0,
         sampleIndex: sampleIndex,
       );

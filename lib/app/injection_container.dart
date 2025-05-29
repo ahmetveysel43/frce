@@ -81,7 +81,7 @@ Future<void> _initializeRepositories() async {
 
     // Initialize USB controller
     final usbController = sl<UsbController>();
-    await usbController.initializeUsb();
+    await usbController.initialize();
     _debugPrint('✅ USB controller initialized');
     
   } catch (e) {

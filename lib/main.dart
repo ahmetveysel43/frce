@@ -1,4 +1,4 @@
-// lib/main.dart - Tamamen Düzeltilmiş
+// lib/main.dart - IzForce Branding ile Güncellenmiş
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app/app_initializer.dart';
@@ -7,7 +7,7 @@ import 'presentation/controllers/usb_controller.dart';
 import 'presentation/controllers/athlete_controller.dart';
 import 'app/injection_container.dart' as di;
 import 'presentation/screens/athletes_screen.dart';
-import 'presentation/screens/vald_dashboard_screen.dart'; // ✅ Tek import yeterli
+import 'presentation/screens/izforce_dashboard_screen.dart'; // ✅ VALD → IzForce
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
       await appController.initialize();
       
       final usbController = context.read<UsbController>();
-      await usbController.initializeUsb();
+      await usbController.initialize();
       
       await Future.delayed(const Duration(seconds: 2));
       
@@ -125,7 +125,7 @@ class _SplashScreenState extends State<SplashScreen> {
             SizedBox(height: 24),
             Text('IzForce', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
             SizedBox(height: 8),
-            Text('Force Platform Analysis', style: TextStyle(fontSize: 16, color: Colors.white70)),
+            Text('Kuvvet Platform Analizi', style: TextStyle(fontSize: 16, color: Colors.white70)),
             SizedBox(height: 48),
             CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
           ],
@@ -148,7 +148,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const AthletesScreen(),
-    const VALDDashboardScreen(),
+    const IzForceDashboardScreen(),
     const Center(child: Text('Analiz')),
   ];
 
@@ -165,7 +165,7 @@ class _MainScreenState extends State<MainScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Sporcular'),
-          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'ForceDecks'),
+          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'IzForce'),
           BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Analiz'),
         ],
       ),
@@ -204,16 +204,16 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Good Morning', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                      const Text('Hoş Geldiniz', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 8),
-                      const Text('Welcome to Force Platform Analysis', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      const Text('IzForce Kuvvet Platform Analizine Hoş Geldiniz', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Text('Today ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}', style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                      Text('Bugün ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}', style: const TextStyle(color: Colors.white70, fontSize: 14)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                const USBStatusWidget(),
+                const IzForceStatusWidget(),
               ],
             ),
           );
@@ -223,13 +223,13 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class USBStatusWidget extends StatelessWidget {
-  const USBStatusWidget({super.key});
+class IzForceStatusWidget extends StatelessWidget {
+  const IzForceStatusWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<UsbController>(
-      builder: (context, usbController, child) { // ✅ Doğru parametre adı
+      builder: (context, usbController, child) {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -238,7 +238,7 @@ class USBStatusWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.1), // ✅ withOpacity yerine withValues
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -249,9 +249,9 @@ class USBStatusWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.usb, color: usbController.isConnected ? Colors.blue : Colors.grey, size: 24),
+                  Icon(Icons.sensors, color: usbController.isConnected ? Colors.blue : Colors.grey, size: 24),
                   const SizedBox(width: 12),
-                  const Text('USB Force Platform', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('IzForce Kuvvet Platformu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -260,7 +260,7 @@ class USBStatusWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      usbController.isConnected ? 'Connected' : 'Not Connected',
+                      usbController.isConnected ? 'Bağlı' : 'Bağlı Değil',
                       style: TextStyle(
                         color: usbController.isConnected ? Colors.green : Colors.grey,
                         fontSize: 12,
@@ -272,10 +272,9 @@ class USBStatusWidget extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               
-              // ✅ Doğru syntax ile if statement
               if (usbController.isConnected && usbController.latestForceData != null) ...[
                 Text(
-                  'Total Force: ${usbController.latestForceData!.totalGRF.toStringAsFixed(1)} N', // ✅ totalForce -> totalGRF
+                  'Toplam Kuvvet: ${usbController.latestForceData!.totalGRF.toStringAsFixed(1)} N',
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.purple),
                 ),
                 const SizedBox(height: 16),
@@ -287,8 +286,8 @@ class USBStatusWidget extends StatelessWidget {
                   onPressed: usbController.isConnected 
                       ? () => usbController.disconnect()
                       : () => _connectToDevice(context, usbController),
-                  icon: Icon(usbController.isConnected ? Icons.usb_off : Icons.usb),
-                  label: Text(usbController.isConnected ? 'Disconnect' : 'Mock Connect'),
+                  icon: Icon(usbController.isConnected ? Icons.sensors_off : Icons.sensors),
+                  label: Text(usbController.isConnected ? 'Bağlantıyı Kes' : 'IzForce\'a Bağlan'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: usbController.isConnected ? Colors.red : Colors.blue,
                     foregroundColor: Colors.white,
@@ -304,14 +303,14 @@ class USBStatusWidget extends StatelessWidget {
   }
 
   void _connectToDevice(BuildContext context, UsbController usbController) async {
-    final success = await usbController.connectToDevice('Mock Force Platform');
+    final success = await usbController.connectToDevice('IzForce Kuvvet Platformu');
     
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success 
-              ? 'Mock USB connection successful! Real-time data stream started.' 
-              : 'Connection error: ${usbController.errorMessage}'),
+              ? 'IzForce bağlantısı başarılı! Gerçek zamanlı veri akışı başladı.'
+              : 'Bağlantı hatası: ${usbController.errorMessage}'),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -332,11 +331,11 @@ class ErrorApp extends StatelessWidget {
             children: [
               const Icon(Icons.error, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              const Text('App failed to start', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('Uygulama başlatılamadı', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              const Text('Please restart the application'),
+              const Text('Lütfen uygulamayı yeniden başlatın'),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: () => main(), child: const Text('Try Again')),
+              ElevatedButton(onPressed: () => main(), child: const Text('Tekrar Dene')),
             ],
           ),
         ),

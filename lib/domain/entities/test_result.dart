@@ -1,3 +1,6 @@
+// lib/domain/entities/test_result.dart - Düzeltilmiş
+import 'dart:math' as math;
+
 import 'package:equatable/equatable.dart';
 import '../../core/constants/test_constants.dart';
 import 'force_data.dart';
@@ -57,9 +60,45 @@ class TestResult extends Equatable {
   // Data quality indicators
   int get sampleCount => rawData.length;
   
+  // ✅ FIXED: Calculate data quality from ForceData properties
   double get averageDataQuality {
     if (rawData.isEmpty) return 0.0;
-    return rawData.map((data) => data.dataQuality).reduce((a, b) => a + b) / rawData.length;
+    
+    // Calculate quality based on available ForceData properties
+    double totalQuality = 0.0;
+    
+    for (final data in rawData) {
+      double quality = _calculateDataQuality(data);
+      totalQuality += quality;
+    }
+    
+    return totalQuality / rawData.length;
+  }
+
+  // ✅ Helper method to calculate data quality
+  double _calculateDataQuality(ForceData data) {
+    double quality = 100.0; // Start with perfect quality
+    
+    // Check for reasonable force values
+    if (data.totalGRF < 0 || data.totalGRF > 5000) quality -= 20;
+    if (data.leftGRF < 0 || data.rightGRF < 0) quality -= 15;
+    
+    // Check for reasonable CoP values (should be within platform bounds)
+    if (data.leftCoPX.abs() > 200 || data.leftCoPY.abs() > 300) quality -= 10;
+    if (data.rightCoPX.abs() > 200 || data.rightCoPY.abs() > 300) quality -= 10;
+    
+    // Check asymmetry (should be reasonable)
+    if (data.asymmetryIndex > 0.5) quality -= 15; // More than 50% asymmetry is suspicious
+    
+    // Check stability (should be reasonable)
+    if (data.stabilityIndex < 0.3) quality -= 10; // Very low stability is suspicious
+    
+    // Check sampling rate consistency
+    if (data.samplingRate != null && (data.samplingRate! < 500 || data.samplingRate! > 2000)) {
+      quality -= 10;
+    }
+    
+    return math.max(0.0, quality); // Ensure quality is not negative
   }
 
   bool get hasGoodQuality => (qualityScore ?? 0) >= 70.0;

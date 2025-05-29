@@ -2,14 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/usb_controller.dart';
-import '../../core/enums/usb_connection_state.dart';
 
 class DeviceStatusWidget extends StatelessWidget {
   const DeviceStatusWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Single Consumer - UsbController already provided
     return Consumer<UsbController>(
       builder: (context, usbController, child) {
         return Container(
@@ -20,7 +18,7 @@ class DeviceStatusWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.1), // ✅ Fixed deprecated withOpacity
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -45,14 +43,16 @@ class DeviceStatusWidget extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  _buildStatusIndicator(usbController.connectionState),
+                  // ✅ FIXED: Use simple connection status
+                  _buildStatusIndicator(usbController.isConnected),
                 ],
               ),
               const SizedBox(height: 16),
               
               _buildStatusRow(
                 'Connection',
-                _getConnectionStatusText(usbController.connectionState),
+                // ✅ FIXED: Use simple connection text  
+                usbController.isConnected ? 'Connected' : 'Disconnected',
                 usbController.isConnected ? Colors.green : Colors.red,
               ),
               const SizedBox(height: 12),
@@ -74,7 +74,7 @@ class DeviceStatusWidget extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildStatusRow(
                   'Total Force',
-                  '${usbController.latestForceData!.totalGRF.toStringAsFixed(1)} N', // ✅ totalForce -> totalGRF
+                  '${usbController.latestForceData!.totalGRF.toStringAsFixed(1)} N',
                   Colors.purple,
                 ),
               ],
@@ -126,7 +126,7 @@ class DeviceStatusWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1), // ✅ Fixed deprecated withOpacity
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -142,32 +142,16 @@ class DeviceStatusWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIndicator(UsbConnectionState state) {
-    Color color;
-    IconData icon;
-    
-    switch (state) {
-      case UsbConnectionState.connected:
-        color = Colors.green;
-        icon = Icons.check_circle;
-        break;
-      case UsbConnectionState.connecting:
-        color = Colors.orange;
-        icon = Icons.sync;
-        break;
-      case UsbConnectionState.error:
-        color = Colors.red;
-        icon = Icons.error;
-        break;
-      default:
-        color = Colors.grey;
-        icon = Icons.usb_off;
-    }
+  // ✅ FIXED: Simple status indicator using bool
+  Widget _buildStatusIndicator(bool isConnected) {
+    Color color = isConnected ? Colors.green : Colors.grey;
+    IconData icon = isConnected ? Icons.check_circle : Icons.usb_off;
+    String text = isConnected ? 'Connected' : 'Disconnected';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1), // ✅ Fixed deprecated withOpacity
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -176,7 +160,7 @@ class DeviceStatusWidget extends StatelessWidget {
           Icon(icon, color: color, size: 16),
           const SizedBox(width: 4),
           Text(
-            _getConnectionStatusText(state),
+            text,
             style: TextStyle(
               color: color,
               fontSize: 12,
@@ -202,7 +186,7 @@ class DeviceStatusWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1), // ✅ Fixed deprecated withOpacity
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -216,19 +200,6 @@ class DeviceStatusWidget extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String _getConnectionStatusText(UsbConnectionState state) {
-    switch (state) {
-      case UsbConnectionState.connected:
-        return 'Connected';
-      case UsbConnectionState.connecting:
-        return 'Connecting';
-      case UsbConnectionState.error:
-        return 'Error';
-      case UsbConnectionState.disconnected:
-        return 'Disconnected';
-      }
   }
 
   void _showConnectionDialog(BuildContext context, UsbController usbController) {

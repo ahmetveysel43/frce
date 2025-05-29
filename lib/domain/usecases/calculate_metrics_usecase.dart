@@ -1,7 +1,6 @@
-// lib/domain/usecases/calculate_metrics_usecase.dart - Düzeltilmiş
+// lib/domain/usecases/calculate_metrics_usecase.dart - Tamamen Düzeltilmiş
 import 'dart:math' as math;
-import 'package:izforce/core/extensions/list_extensions.dart';
-
+import 'package:dartz/dartz.dart';
 import '../entities/force_data.dart';
 import '../value_objects/asymmetry_data.dart';
 import '../../core/constants/test_constants.dart';
@@ -9,7 +8,6 @@ import '../../core/constants/physics_constants.dart';
 import '../../core/utils/math_utils.dart';
 import '../../core/utils/signal_processing.dart';
 import '../../core/errors/failures.dart';
-import '../repositories/athlete_repository.dart';
 
 class CalculateMetricsUseCase {
   const CalculateMetricsUseCase();
@@ -45,8 +43,8 @@ class CalculateMetricsUseCase {
 
   /// Counter Movement Jump metriklerini hesapla
   Future<Map<String, double>> _calculateCMJMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
-    final samplingRate = data.first.samplingRate;
+    final forces = data.map((d) => d.totalGRF).toList();
+    final samplingRate = data.first.samplingRate ?? 1000.0; // ✅ Null safety
     
     // Baseline düzeltmesi
     final correctedForces = SignalProcessor.baselineCorrection(forces);
@@ -55,8 +53,8 @@ class CalculateMetricsUseCase {
     final phases = _detectJumpPhases(correctedForces, samplingRate);
     
     // Temel metrikler
-    final peakForce = correctedForces.max;
-    final averageForce = correctedForces.mean;
+    final peakForce = _getMaxValue(correctedForces);
+    final averageForce = _getMeanValue(correctedForces);
     final rfd = _calculateRFD(correctedForces, phases, samplingRate);
     final impulse = MathUtils.calculateImpulse(correctedForces, samplingRate);
     
@@ -90,14 +88,14 @@ class CalculateMetricsUseCase {
   /// Squat Jump metriklerini hesapla
   Future<Map<String, double>> _calculateSJMetrics(List<ForceData> data) async {
     // SJ için CMJ'den farklı olarak countermovement fazı yok
-    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
-    final samplingRate = data.first.samplingRate;
+    final forces = data.map((d) => d.totalGRF).toList();
+    final samplingRate = data.first.samplingRate ?? 1000.0; // ✅ Null safety
     
     final correctedForces = SignalProcessor.baselineCorrection(forces);
     final phases = _detectSquatJumpPhases(correctedForces, samplingRate);
     
-    final peakForce = correctedForces.max;
-    final averageForce = correctedForces.mean;
+    final peakForce = _getMaxValue(correctedForces);
+    final averageForce = _getMeanValue(correctedForces);
     final rfd = _calculateRFD(correctedForces, phases, samplingRate);
     final impulse = MathUtils.calculateImpulse(correctedForces, samplingRate);
     final jumpHeight = _calculateJumpHeight(correctedForces, phases, samplingRate);
@@ -116,8 +114,8 @@ class CalculateMetricsUseCase {
 
   /// Drop Jump metriklerini hesapla
   Future<Map<String, double>> _calculateDJMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
-    final samplingRate = data.first.samplingRate;
+    final forces = data.map((d) => d.totalGRF).toList();
+    final samplingRate = data.first.samplingRate ?? 1000.0; // ✅ Null safety
     
     final correctedForces = SignalProcessor.baselineCorrection(forces);
     final phases = _detectDropJumpPhases(correctedForces, samplingRate);
@@ -127,7 +125,7 @@ class CalculateMetricsUseCase {
     final groundContactTime = phases['groundContactTime'] ?? 0.0;
     
     final jumpHeight = _calculateJumpHeight(correctedForces, phases, samplingRate);
-    final reactiveStrengthIndex = jumpHeight / groundContactTime;
+    final reactiveStrengthIndex = groundContactTime > 0 ? jumpHeight / groundContactTime : 0.0;
     
     return {
       'jumpHeight': jumpHeight,
@@ -140,12 +138,13 @@ class CalculateMetricsUseCase {
 
   /// Balance metriklerini hesapla
   Future<Map<String, double>> _calculateBalanceMetrics(List<ForceData> data) async {
-    final copX = data.map((d) => d.combinedCoPX).toList(); // ✅ Updated to use combinedCoPX
+    // ✅ Combined CoP calculation from left and right CoP
+    final copX = data.map((d) => _calculateCombinedCoPX(d)).toList();
     
     // Postural sway hesaplamaları
-    final copRange = copX.max - copX.min;
-    final copStdDev = MathUtils.calculateStandardDeviation(copX);
-    final copVelocity = _calculateCoPVelocity(copX, data.first.samplingRate);
+    final copRange = _getMaxValue(copX) - _getMinValue(copX);
+    final copStdDev = _calculateStandardDeviation(copX);
+    final copVelocity = _calculateCoPVelocity(copX, data.first.samplingRate ?? 1000.0);
     
     return {
       'copRange': copRange,
@@ -157,12 +156,13 @@ class CalculateMetricsUseCase {
 
   /// Isometric metriklerini hesapla
   Future<Map<String, double>> _calculateIsometricMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
+    final forces = data.map((d) => d.totalGRF).toList();
     
-    final peakForce = forces.max;
-    final averageForce = forces.mean;
-    final forceStability = MathUtils.calculateStandardDeviation(forces);
-    final rfd = forces.isNotEmpty ? (forces.last - forces.first) / (forces.length / data.first.samplingRate) : 0.0;
+    final peakForce = _getMaxValue(forces);
+    final averageForce = _getMeanValue(forces);
+    final forceStability = _calculateStandardDeviation(forces);
+    final samplingRate = data.first.samplingRate ?? 1000.0; // ✅ Null safety
+    final rfd = forces.isNotEmpty ? (forces.last - forces.first) / (forces.length / samplingRate) : 0.0;
     
     return {
       'peakForce': peakForce,
@@ -174,10 +174,10 @@ class CalculateMetricsUseCase {
 
   /// Landing metriklerini hesapla
   Future<Map<String, double>> _calculateLandingMetrics(List<ForceData> data) async {
-    final forces = data.map((d) => d.totalGRF).toList(); // ✅ totalForce -> totalGRF
-    final samplingRate = data.first.samplingRate;
+    final forces = data.map((d) => d.totalGRF).toList();
+    final samplingRate = data.first.samplingRate ?? 1000.0; // ✅ Null safety
     
-    final peakLandingForce = forces.max;
+    final peakLandingForce = _getMaxValue(forces);
     final timeToStabilization = _calculateTimeToStabilization(forces, samplingRate);
     final loadingRate = _calculateLoadingRate(forces, samplingRate);
     
@@ -188,10 +188,44 @@ class CalculateMetricsUseCase {
     };
   }
 
-  // Helper methods
+  // ✅ Helper methods - Null safety ile
+  double _getMaxValue(List<double> values) {
+    if (values.isEmpty) return 0.0;
+    return values.reduce(math.max);
+  }
+
+  double _getMinValue(List<double> values) {
+    if (values.isEmpty) return 0.0;
+    return values.reduce(math.min);
+  }
+
+  double _getMeanValue(List<double> values) {
+    if (values.isEmpty) return 0.0;
+    return values.reduce((a, b) => a + b) / values.length;
+  }
+
+  double _calculateStandardDeviation(List<double> values) {
+    if (values.isEmpty) return 0.0;
+    final mean = _getMeanValue(values);
+    final variance = values.map((x) => math.pow(x - mean, 2)).reduce((a, b) => a + b) / values.length;
+    return math.sqrt(variance);
+  }
+
+  // ✅ Combined CoP calculation
+  double _calculateCombinedCoPX(ForceData data) {
+    final leftForce = data.leftGRF;
+    final rightForce = data.rightGRF;
+    final totalForce = leftForce + rightForce;
+    
+    if (totalForce == 0) return 0.0;
+    
+    // Weight-averaged CoP
+    return (leftForce * data.leftCoPX + rightForce * data.rightCoPX) / totalForce;
+  }
+
   Map<String, double> _detectJumpPhases(List<double> forces, double samplingRate) {
     // Basitleştirilmiş faz tespiti
-    final threshold = 50.0; // Newton
+    const threshold = 50.0; // Newton
     int takeoffIndex = -1;
     
     for (int i = 0; i < forces.length; i++) {
@@ -225,7 +259,7 @@ class CalculateMetricsUseCase {
   double _calculateJumpHeight(List<double> forces, Map<String, double> phases, double samplingRate) {
     // Basitleştirilmiş jump height hesaplama
     final impulse = MathUtils.calculateImpulse(forces, samplingRate);
-    final bodyWeight = 700.0; // Varsayılan vücut ağırlığı (N)
+    const bodyWeight = 700.0; // Varsayılan vücut ağırlığı (N)
     
     if (bodyWeight == 0) return 0.0;
     
@@ -244,7 +278,7 @@ class CalculateMetricsUseCase {
     if (forces.length < 2) return 0.0;
     
     // P = F * v, velocity'yi force'tan türetiyoruz
-    final maxForce = forces.max;
+    final maxForce = _getMaxValue(forces);
     final estimatedVelocity = maxForce / 1000; // Basitleştirilmiş
     
     return maxForce * estimatedVelocity;
@@ -259,8 +293,9 @@ class CalculateMetricsUseCase {
       );
     }
     
-    final leftTotal = data.map((d) => d.leftDeckTotal).reduce((a, b) => a + b);  // ✅ Updated property name
-    final rightTotal = data.map((d) => d.rightDeckTotal).reduce((a, b) => a + b); // ✅ Updated property name
+    // ✅ Use actual ForceData properties
+    final leftTotal = data.map((d) => d.leftGRF).reduce((a, b) => a + b);
+    final rightTotal = data.map((d) => d.rightGRF).reduce((a, b) => a + b);
     
     return AsymmetryData.fromValues(
       type: AsymmetryType.force,
@@ -283,7 +318,7 @@ class CalculateMetricsUseCase {
 
   double _calculateTimeToStabilization(List<double> forces, double samplingRate) {
     // Basitleştirilmiş stabilizasyon zamanı
-    final threshold = forces.mean + MathUtils.calculateStandardDeviation(forces);
+    final threshold = _getMeanValue(forces) + _calculateStandardDeviation(forces);
     
     for (int i = forces.length - 1; i >= 0; i--) {
       if (forces[i] > threshold) {
@@ -297,7 +332,7 @@ class CalculateMetricsUseCase {
   double _calculateLoadingRate(List<double> forces, double samplingRate) {
     if (forces.length < 2) return 0.0;
     
-    final peakForce = forces.max;
+    final peakForce = _getMaxValue(forces);
     final peakIndex = forces.indexOf(peakForce);
     
     if (peakIndex == 0) return 0.0;
