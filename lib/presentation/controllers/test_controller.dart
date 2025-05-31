@@ -97,9 +97,9 @@ class TestController extends GetxController {
   String? get errorMessage => _errorMessage.value;
   bool get isLoading => _isLoading.value;
   bool get isMockMode => _isMockMode.value;
-  bool get isInitialized => true; // Controller başlatıldı mı
+  bool get isInitialized => true;
 
-  // Force data getter (düzeltildi)
+  // Force data getter
   List<ForceData> get forceData => List.from(_forceData);
 
   // Progress calculation
@@ -168,7 +168,6 @@ class TestController extends GetxController {
   void pauseIfRunning() {
     if (_isTestRunning.value) {
       AppLogger.info('⏸️ Test duraklatıldı (app paused)');
-      // Test state'i koru ama timer'ları durdur
       _cancelAllTimers();
     }
   }
@@ -203,7 +202,8 @@ class TestController extends GetxController {
         _connectionStatus.value = ConnectionStatus.connected;
         AppLogger.usbConnected(deviceId);
         
-        _goToNextStep();
+        // Connection başarılı olduğunda step güncellenmemeli
+        // _goToNextStep(); // KALDIRILDI
         return true;
       } else {
         // TODO: Real USB connection logic
@@ -240,6 +240,21 @@ class TestController extends GetxController {
     _selectedAthlete.value = athlete;
     _clearError();
     AppLogger.info('👤 Sporcu seçildi: ${athlete.fullName}');
+    
+    // Athlete seçildiğinde step'i güncelle
+    if (_currentStep.value == TestStep.deviceConnection || _currentStep.value == TestStep.athleteSelection) {
+      _currentStep.value = TestStep.athleteSelection;
+    }
+  }
+
+  void proceedToAthleteSelection() {
+    if (!isConnected) {
+      _setError('Önce cihaza bağlanın');
+      return;
+    }
+    _currentStep.value = TestStep.athleteSelection;
+    update(); // GetBuilder'ı güncelle
+    AppLogger.info('👤 Sporcu seçim adımına geçildi');
   }
 
   void proceedToTestSelection() {
@@ -247,7 +262,9 @@ class TestController extends GetxController {
       _setError('Lütfen bir sporcu seçin');
       return;
     }
-    _goToNextStep();
+    _currentStep.value = TestStep.testSelection;
+    update(); // GetBuilder'ı güncelle
+    AppLogger.info('🏃 Test seçim adımına geçildi');
   }
 
   // ===== STEP 3: TEST SELECTION =====
@@ -256,6 +273,9 @@ class TestController extends GetxController {
     _selectedTestType.value = testType;
     _clearError();
     AppLogger.info('🏃 Test türü seçildi: ${testType.turkishName}');
+    
+    // Test seçildiğinde otomatik olarak calibration'a geç
+    _currentStep.value = TestStep.testSelection;
   }
 
   void proceedToCalibration() {
@@ -263,7 +283,10 @@ class TestController extends GetxController {
       _setError('Lütfen bir test türü seçin');
       return;
     }
-    _goToNextStep();
+    _currentStep.value = TestStep.calibration;
+    _isCalibrated.value = false; // Reset calibration
+    update(); // GetBuilder'ı güncelle
+    AppLogger.info('⚖️ Kalibrasyon adımına geçildi');
   }
 
   // ===== STEP 4: CALIBRATION =====
@@ -289,6 +312,11 @@ class TestController extends GetxController {
       _clearError();
       
       AppLogger.success('✅ Kalibrasyon tamamlandı');
+      
+      // Kalibrasyon tamamlandığında otomatik olarak bir sonraki adıma geç
+      await Future.delayed(const Duration(milliseconds: 500)); // Kısa bekleme
+      proceedToWeightMeasurement();
+      
       return true;
       
     } catch (e) {
@@ -305,7 +333,10 @@ class TestController extends GetxController {
       _setError('Kalibrasyon gerekli');
       return;
     }
-    _goToNextStep();
+    _currentStep.value = TestStep.weightMeasurement;
+    _initializeStep(TestStep.weightMeasurement); // Weight measurement'ı başlat
+    update(); // GetBuilder'ı güncelle
+    AppLogger.info('⚖️ Ağırlık ölçümü adımına geçildi');
   }
 
   // ===== STEP 5: WEIGHT MEASUREMENT =====
@@ -359,7 +390,9 @@ class TestController extends GetxController {
     }
     
     _weightTimer?.cancel();
-    _goToNextStep();
+    _currentStep.value = TestStep.testExecution;
+    update(); // GetBuilder'ı güncelle
+    AppLogger.info('🏃 Test yürütme adımına geçildi');
   }
 
   // ===== STEP 6: TEST EXECUTION =====
@@ -652,7 +685,8 @@ class TestController extends GetxController {
       // Save to database
       await _saveTestResult(result);
       
-      _goToNextStep();
+      _currentStep.value = TestStep.results;
+      update(); // GetBuilder'ı güncelle
       AppLogger.success('✅ Test sonuçları hazır');
       
     } catch (e) {
@@ -788,20 +822,47 @@ class TestController extends GetxController {
 
   // ===== NAVIGATION =====
 
-  void _goToNextStep() {
-    final currentIndex = TestStep.values.indexOf(_currentStep.value);
-    if (currentIndex < TestStep.values.length - 1) {
-      _currentStep.value = TestStep.values[currentIndex + 1];
-      _initializeStep(_currentStep.value);
-    }
-  }
-
   void goToPreviousStep() {
     final currentIndex = TestStep.values.indexOf(_currentStep.value);
     if (currentIndex > 0) {
       _cancelAllTimers();
-      _currentStep.value = TestStep.values[currentIndex - 1];
-      _initializeStep(_currentStep.value);
+      final previousStep = TestStep.values[currentIndex - 1];
+      _currentStep.value = previousStep;
+      
+      // Önceki adıma giderken state'i reset et
+      _resetStepState(previousStep);
+      
+      AppLogger.info('⬅️ Önceki adıma geçildi: ${previousStep.turkishName}');
+    }
+  }
+
+  void _resetStepState(TestStep step) {
+    _clearError();
+    
+    switch (step) {
+      case TestStep.calibration:
+        // Kalibrasyon adımına geri dönüldüğünde state'i sıfırla
+        _isCalibrated.value = false;
+        _calibrationProgress.value = 0.0;
+        _leftZeroOffset.value = 0.0;
+        _rightZeroOffset.value = 0.0;
+        break;
+      case TestStep.weightMeasurement:
+        // Ağırlık ölçümü adımına geri dönüldüğünde state'i sıfırla
+        _measuredWeight.value = null;
+        _isWeightStable.value = false;
+        _weightSamples.clear();
+        break;
+      case TestStep.testExecution:
+        // Test yürütme adımına geri dönüldüğünde state'i sıfırla
+        _isTestRunning.value = false;
+        _testResults.value = null;
+        _forceData.clear();
+        _liveMetrics.clear();
+        _currentPhase.value = JumpPhase.quietStanding;
+        break;
+      default:
+        break;
     }
   }
 
@@ -809,6 +870,7 @@ class TestController extends GetxController {
     _cancelAllTimers();
     _currentStep.value = step;
     _initializeStep(step);
+    AppLogger.info('➡️ Adıma geçildi: ${step.turkishName}');
   }
 
   void _initializeStep(TestStep step) {
@@ -816,7 +878,20 @@ class TestController extends GetxController {
     
     switch (step) {
       case TestStep.weightMeasurement:
+        // Ağırlık ölçümü adımında otomatik olarak ölçümü başlat
         startWeightMeasurement();
+        break;
+      case TestStep.calibration:
+        // Kalibrasyon adımında state'i hazırla ama otomatik başlatma
+        _isCalibrated.value = false;
+        _calibrationProgress.value = 0.0;
+        break;
+      case TestStep.testExecution:
+        // Test yürütme adımında state'i hazırla
+        _isTestRunning.value = false;
+        _testResults.value = null;
+        _forceData.clear();
+        _liveMetrics.clear();
         break;
       default:
         break;
@@ -826,14 +901,14 @@ class TestController extends GetxController {
   void restartTestFlow() {
     _resetTestFlow();
     _currentStep.value = TestStep.deviceConnection;
+    update(); // GetBuilder'ı güncelle
+    AppLogger.info('🔄 Test akışı yeniden başlatıldı');
   }
 
   void _resetTestFlow() {
     _cancelAllTimers();
     
-    // Reset all state
-    _selectedAthlete.value = null;
-    _selectedTestType.value = null;
+    // Reset all state except connection and athlete/test selection
     _isCalibrated.value = false;
     _measuredWeight.value = null;
     _isWeightStable.value = false;
