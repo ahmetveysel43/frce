@@ -76,15 +76,16 @@ class PhaseIndicatorWidget extends StatelessWidget {
   ) {
     return Container(
       height: height,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12), // Reduced padding
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppTheme.darkDivider),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Important: don't take more space than needed
         children: [
-          // Header
+          // Header - Made more compact
           if (showPhaseNames) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -94,46 +95,48 @@ class PhaseIndicatorWidget extends StatelessWidget {
                   style: Get.textTheme.titleSmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 12, // Smaller font
                   ),
                 ),
                 _buildCurrentPhaseChip(currentPhase),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8), // Reduced spacing
           ],
           
-          // Phase indicators
+          // Phase indicators - Made more compact
           Expanded(
-            child: Row(
-              children: phases.asMap().entries.map((entry) {
-                final index = entry.key;
-                final phase = entry.value;
-                final isActive = phase == currentPhase;
-                final isCompleted = _isPhaseCompleted(phase, currentPhase, phases);
-                
-                return Expanded(
-                  child: Row(
+            child: SingleChildScrollView( // Wrap in scrollable
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: phases.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final phase = entry.value;
+                  final isActive = phase == currentPhase;
+                  final isCompleted = _isPhaseCompleted(phase, currentPhase, phases);
+                  
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: _buildPhaseStep(
-                          phase: phase,
-                          isActive: isActive,
-                          isCompleted: isCompleted,
-                          showName: showPhaseNames,
-                        ),
+                      _buildPhaseStep(
+                        phase: phase,
+                        isActive: isActive,
+                        isCompleted: isCompleted,
+                        showName: showPhaseNames,
                       ),
                       if (index < phases.length - 1)
                         _buildPhaseConnector(isCompleted),
                     ],
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ),
           
-          // Progress bar
+          // Progress bar - Made optional and compact
           if (showProgress) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 8), // Reduced spacing
             _buildProgressBar(phases, currentPhase, controller),
           ],
         ],
@@ -156,6 +159,7 @@ class PhaseIndicatorWidget extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Header
           Text(
@@ -168,24 +172,26 @@ class PhaseIndicatorWidget extends StatelessWidget {
           const SizedBox(height: 16),
           
           // Phase list
-          ...phases.asMap().entries.map((entry) {
-            final index = entry.key;
-            final phase = entry.value;
-            final isActive = phase == currentPhase;
-            final isCompleted = _isPhaseCompleted(phase, currentPhase, phases);
-            
-            return Column(
-              children: [
-                _buildVerticalPhaseItem(
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: phases.length,
+              separatorBuilder: (context, index) => _buildVerticalConnector(
+                _isPhaseCompleted(phases[index], currentPhase, phases)
+              ),
+              itemBuilder: (context, index) {
+                final phase = phases[index];
+                final isActive = phase == currentPhase;
+                final isCompleted = _isPhaseCompleted(phase, currentPhase, phases);
+                
+                return _buildVerticalPhaseItem(
                   phase: phase,
                   isActive: isActive,
                   isCompleted: isCompleted,
-                ),
-                if (index < phases.length - 1)
-                  _buildVerticalConnector(isCompleted),
-              ],
-            );
-          }).toList(),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -237,8 +243,11 @@ class PhaseIndicatorWidget extends StatelessWidget {
                   style: Get.textTheme.bodySmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 10,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -255,7 +264,7 @@ class PhaseIndicatorWidget extends StatelessWidget {
   ) {
     return Container(
       height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Reduced padding
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
         borderRadius: BorderRadius.circular(8),
@@ -265,39 +274,45 @@ class PhaseIndicatorWidget extends StatelessWidget {
         children: [
           // Current phase icon
           Container(
-            width: 32,
-            height: 32,
+            width: 28, // Smaller size
+            height: 28,
             decoration: BoxDecoration(
               color: _getPhaseColor(currentPhase).withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               _getPhaseIcon(currentPhase),
               color: _getPhaseColor(currentPhase),
-              size: 18,
+              size: 16, // Smaller icon
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           
           // Phase info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   currentPhase.turkishName,
                   style: Get.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 13, // Smaller font
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   _getPhaseDescription(currentPhase),
                   style: Get.textTheme.bodySmall?.copyWith(
                     color: AppTheme.textSecondary,
-                    fontSize: 11,
+                    fontSize: 10, // Smaller font
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -323,55 +338,59 @@ class PhaseIndicatorWidget extends StatelessWidget {
             ? AppTheme.successColor
             : AppTheme.textHint;
     
-    return Column(
-      children: [
-        // Phase circle
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isActive || isCompleted 
-                ? color.withOpacity(0.2)
-                : AppTheme.darkBackground,
-            border: Border.all(
-              color: color,
-              width: isActive ? 3 : 2,
+    return Container(
+      width: 60, // Fixed width to prevent overflow
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Phase circle
+          Container(
+            width: 24, // Smaller size
+            height: 24,
+            decoration: BoxDecoration(
+              color: isActive || isCompleted 
+                  ? color.withOpacity(0.2)
+                  : AppTheme.darkBackground,
+              border: Border.all(
+                color: color,
+                width: isActive ? 2 : 1, // Thinner border
+              ),
+              shape: BoxShape.circle,
             ),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            isCompleted 
-                ? Icons.check
-                : _getPhaseIcon(phase),
-            color: color,
-            size: isActive ? 18 : 16,
-          ),
-        ),
-        
-        // Phase name
-        if (showName) ...[
-          const SizedBox(height: 4),
-          Text(
-            _getPhaseShortName(phase),
-            style: Get.textTheme.bodySmall?.copyWith(
+            child: Icon(
+              isCompleted 
+                  ? Icons.check
+                  : _getPhaseIcon(phase),
               color: color,
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              size: isActive ? 14 : 12, // Smaller icon
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
+          
+          // Phase name
+          if (showName) ...[
+            const SizedBox(height: 4),
+            Text(
+              _getPhaseShortName(phase),
+              style: Get.textTheme.bodySmall?.copyWith(
+                color: color,
+                fontSize: 9, // Smaller font
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2, // Allow 2 lines
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildPhaseConnector(bool isCompleted) {
     return Container(
       height: 2,
-      width: 20,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: 12, // Shorter connector
+      margin: const EdgeInsets.symmetric(horizontal: 2), // Reduced margin
       decoration: BoxDecoration(
         color: isCompleted ? AppTheme.successColor : AppTheme.darkDivider,
         borderRadius: BorderRadius.circular(1),
@@ -391,27 +410,27 @@ class PhaseIndicatorWidget extends StatelessWidget {
             : AppTheme.textHint;
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6), // Reduced padding
       child: Row(
         children: [
           // Phase indicator
           Container(
-            width: 24,
-            height: 24,
+            width: 20, // Smaller size
+            height: 20,
             decoration: BoxDecoration(
               color: isActive || isCompleted 
                   ? color.withOpacity(0.2)
                   : AppTheme.darkBackground,
-              border: Border.all(color: color, width: 2),
+              border: Border.all(color: color, width: 1.5),
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCompleted ? Icons.check : _getPhaseIcon(phase),
               color: color,
-              size: 12,
+              size: 10, // Smaller icon
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           
           // Phase name
           Expanded(
@@ -420,7 +439,10 @@ class PhaseIndicatorWidget extends StatelessWidget {
               style: Get.textTheme.bodySmall?.copyWith(
                 color: color,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 11, // Smaller font
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -431,8 +453,8 @@ class PhaseIndicatorWidget extends StatelessWidget {
   Widget _buildVerticalConnector(bool isCompleted) {
     return Container(
       width: 2,
-      height: 16,
-      margin: const EdgeInsets.only(left: 11),
+      height: 12, // Shorter connector
+      margin: const EdgeInsets.only(left: 9), // Adjusted margin
       decoration: BoxDecoration(
         color: isCompleted ? AppTheme.successColor : AppTheme.darkDivider,
         borderRadius: BorderRadius.circular(1),
@@ -444,10 +466,10 @@ class PhaseIndicatorWidget extends StatelessWidget {
     final color = _getPhaseColor(currentPhase);
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), // Smaller padding
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Row(
@@ -456,14 +478,14 @@ class PhaseIndicatorWidget extends StatelessWidget {
           Icon(
             _getPhaseIcon(currentPhase),
             color: color,
-            size: 12,
+            size: 10, // Smaller icon
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 3),
           Text(
-            currentPhase.turkishName,
+            _getPhaseShortName(currentPhase), // Use short name
             style: TextStyle(
               color: color,
-              fontSize: 11,
+              fontSize: 9, // Smaller font
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -481,6 +503,7 @@ class PhaseIndicatorWidget extends StatelessWidget {
     final progress = currentIndex >= 0 ? (currentIndex + 1) / phases.length : 0.0;
     
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -489,25 +512,25 @@ class PhaseIndicatorWidget extends StatelessWidget {
               'İlerleme',
               style: Get.textTheme.bodySmall?.copyWith(
                 color: AppTheme.textSecondary,
-                fontSize: 11,
+                fontSize: 9, // Smaller font
               ),
             ),
             Text(
               '${(progress * 100).toStringAsFixed(0)}%',
               style: Get.textTheme.bodySmall?.copyWith(
                 color: Colors.white,
-                fontSize: 11,
+                fontSize: 9, // Smaller font
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3), // Reduced spacing
         LinearProgressIndicator(
           value: progress,
           backgroundColor: AppTheme.darkDivider,
           valueColor: AlwaysStoppedAnimation(_getPhaseColor(currentPhase)),
-          minHeight: 4,
+          minHeight: 3, // Thinner progress bar
         ),
       ],
     );
@@ -518,15 +541,16 @@ class PhaseIndicatorWidget extends StatelessWidget {
     final progress = currentIndex >= 0 ? (currentIndex + 1) / phases.length : 0.0;
     
     return Container(
-      width: 40,
+      width: 35, // Smaller width
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             '${(progress * 100).toStringAsFixed(0)}%',
             style: Get.textTheme.bodySmall?.copyWith(
               color: Colors.white,
-              fontSize: 10,
+              fontSize: 9, // Smaller font
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -535,7 +559,7 @@ class PhaseIndicatorWidget extends StatelessWidget {
             value: progress,
             backgroundColor: AppTheme.darkDivider,
             valueColor: AlwaysStoppedAnimation(_getPhaseColor(currentPhase)),
-            minHeight: 2,
+            minHeight: 2, // Thinner progress bar
           ),
         ],
       ),
@@ -618,7 +642,7 @@ class PhaseIndicatorWidget extends StatelessWidget {
       case JumpPhase.quietStanding:
         return 'Sakin';
       case JumpPhase.unloading:
-        return 'Yük Azalt';
+        return 'Azalt';
       case JumpPhase.braking:
         return 'Fren';
       case JumpPhase.propulsion:
@@ -635,9 +659,9 @@ class PhaseIndicatorWidget extends StatelessWidget {
       case JumpPhase.quietStanding:
         return 'Hareketsiz duruş';
       case JumpPhase.unloading:
-        return 'Yük azaltma fazı';
+        return 'Yük azaltma';
       case JumpPhase.braking:
-        return 'Frenleme fazı';
+        return 'Frenleme';
       case JumpPhase.propulsion:
         return 'İtme fazı';
       case JumpPhase.flight:
