@@ -729,6 +729,19 @@ class TestExecutionScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // Debug için manuel stabil yapma butonu
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Test için manuel olarak stabil yap
+                        testController._isWeightStable.value = true;
+                        testController.update();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.warningColor,
+                      ),
+                      child: Text('Debug: Manuel Stabil Yap'),
+                    ),
                   ],
                 ],
               ),
@@ -1090,7 +1103,11 @@ class TestExecutionScreen extends StatelessWidget {
             return ElevatedButton.icon(
               onPressed: testController.isLoading 
                   ? null 
-                  : () => testController.startCalibration(),
+                  : () async {
+                      // Kalibrasyon başlat
+                      await testController.startCalibration();
+                      // Kalibrasyon tamamlandıktan sonra otomatik geçiş yapılacak
+                    },
               icon: testController.isLoading 
                   ? SizedBox(
                       width: 16,
