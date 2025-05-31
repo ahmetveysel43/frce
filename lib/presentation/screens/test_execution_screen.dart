@@ -140,36 +140,38 @@ class TestExecutionScreen extends StatelessWidget {
   }
 
   Widget _buildConnectionIndicator(TestController testController) {
-    final isConnected = testController.isConnected;
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isConnected 
-            ? AppTheme.successColor.withOpacity(0.2)
-            : AppTheme.errorColor.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isConnected ? Icons.wifi : Icons.wifi_off,
-            size: 12,
-            color: isConnected ? AppTheme.successColor : AppTheme.errorColor,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            isConnected ? 'Bağlı' : 'Offline',
-            style: TextStyle(
+    return Obx(() {
+      final isConnected = testController.isConnected;
+      
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isConnected 
+              ? AppTheme.successColor.withOpacity(0.2)
+              : AppTheme.errorColor.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isConnected ? Icons.wifi : Icons.wifi_off,
+              size: 12,
               color: isConnected ? AppTheme.successColor : AppTheme.errorColor,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
             ),
-          ),
-        ],
-      ),
-    );
+            const SizedBox(width: 4),
+            Text(
+              isConnected ? 'Bağlı' : 'Offline',
+              style: TextStyle(
+                color: isConnected ? AppTheme.successColor : AppTheme.errorColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildProgressIndicator(TestController testController) {
@@ -204,35 +206,39 @@ class TestExecutionScreen extends StatelessWidget {
           const SizedBox(height: 12),
           
           // Progress bar
-          LinearProgressIndicator(
-            value: testController.overallProgress,
-            backgroundColor: AppTheme.darkDivider,
-            valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
-            minHeight: 4,
-          ),
+          Obx(() {
+            return LinearProgressIndicator(
+              value: testController.overallProgress,
+              backgroundColor: AppTheme.darkDivider,
+              valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
+              minHeight: 4,
+            );
+          }),
           const SizedBox(height: 8),
           
           // Progress text
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'İlerleme',
-                style: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 12,
+          Obx(() {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'İlerleme',
+                  style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              Text(
-                '${(testController.overallProgress * 100).toStringAsFixed(0)}% Tamamlandı',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                Text(
+                  '${(testController.overallProgress * 100).toStringAsFixed(0)}% Tamamlandı',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -329,59 +335,67 @@ class TestExecutionScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 50),
-          Icon(
-            testController.isConnected ? Icons.check_circle : Icons.link,
-            size: 80,
-            color: testController.isConnected ? AppTheme.successColor : AppTheme.primaryColor,
-          ),
+          Obx(() {
+            return Icon(
+              testController.isConnected ? Icons.check_circle : Icons.link,
+              size: 80,
+              color: testController.isConnected ? AppTheme.successColor : AppTheme.primaryColor,
+            );
+          }),
           const SizedBox(height: 24),
-          Text(
-            testController.isConnected ? 'Cihaz Bağlandı' : 'Cihaza Bağlan',
-            style: Get.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            testController.isConnected 
-                ? 'Force plate cihazı başarıyla bağlandı. Devam etmek için İleri butonuna tıklayın.'
-                : 'Test yapmak için önce force plate cihazına bağlanmanız gerekiyor.',
-            style: Get.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          if (!testController.isConnected)
-            ElevatedButton.icon(
-              onPressed: () => testController.connectToDevice('USB_ForcePlate_001'),
-              icon: testController.connectionStatus == ConnectionStatus.connecting
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                  : Icon(Icons.link),
-              label: Text(testController.connectionStatus == ConnectionStatus.connecting 
-                  ? 'Bağlanıyor...' 
-                  : 'Cihaza Bağlan'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          Obx(() {
+            return Text(
+              testController.isConnected ? 'Cihaz Bağlandı' : 'Cihaza Bağlan',
+              style: Get.textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-            ),
+              textAlign: TextAlign.center,
+            );
+          }),
+          const SizedBox(height: 16),
+          Obx(() {
+            return Text(
+              testController.isConnected 
+                  ? 'Force plate cihazı başarıyla bağlandı. Devam etmek için İleri butonuna tıklayın.'
+                  : 'Test yapmak için önce force plate cihazına bağlanmanız gerekiyor.',
+              style: Get.textTheme.bodyMedium?.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            );
+          }),
+          const SizedBox(height: 32),
+          Obx(() {
+            if (!testController.isConnected) {
+              return ElevatedButton.icon(
+                onPressed: () => testController.connectToDevice('USB_ForcePlate_001'),
+                icon: testController.connectionStatus == ConnectionStatus.connecting
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : Icon(Icons.link),
+                label: Text(testController.connectionStatus == ConnectionStatus.connecting 
+                    ? 'Bağlanıyor...' 
+                    : 'Cihaza Bağlan'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
     );
   }
 
   Widget _buildAthleteSelectionStep(TestController testController, AthleteController athleteController) {
-    final selectedAthlete = athleteController.selectedAthlete;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -389,13 +403,13 @@ class TestExecutionScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 50),
           Icon(
-            selectedAthlete != null ? Icons.check_circle : Icons.person_add,
+            athleteController.selectedAthlete != null ? Icons.check_circle : Icons.person_add,
             size: 80,
-            color: selectedAthlete != null ? AppTheme.successColor : AppTheme.primaryColor,
+            color: athleteController.selectedAthlete != null ? AppTheme.successColor : AppTheme.primaryColor,
           ),
           const SizedBox(height: 24),
           Text(
-            selectedAthlete != null ? 'Sporcu Seçildi' : 'Sporcu Seç',
+            athleteController.selectedAthlete != null ? 'Sporcu Seçildi' : 'Sporcu Seç',
             style: Get.textTheme.headlineSmall?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -403,7 +417,7 @@ class TestExecutionScreen extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          if (selectedAthlete != null)
+          if (athleteController.selectedAthlete != null)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -413,17 +427,17 @@ class TestExecutionScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    selectedAthlete.fullName,
+                    athleteController.selectedAthlete!.fullName,
                     style: Get.textTheme.titleLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  if (selectedAthlete.sport != null) ...[
+                  if (athleteController.selectedAthlete!.sport != null) ...[
                     const SizedBox(height: 4),
                     Text(
-                      selectedAthlete.sport!,
+                      athleteController.selectedAthlete!.sport!,
                       style: TextStyle(
                         color: AppTheme.textSecondary,
                       ),
@@ -442,7 +456,7 @@ class TestExecutionScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           const SizedBox(height: 32),
-          if (selectedAthlete == null)
+          if (athleteController.selectedAthlete == null)
             ElevatedButton.icon(
               onPressed: () => Get.toNamed('/athlete-selection'),
               icon: Icon(Icons.person),
@@ -457,94 +471,103 @@ class TestExecutionScreen extends StatelessWidget {
   }
 
   Widget _buildTestSelectionStep(TestController testController) {
-    final selectedTest = testController.selectedTestType;
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 50),
-          Icon(
-            selectedTest != null ? Icons.check_circle : Icons.analytics,
-            size: 80,
-            color: selectedTest != null ? AppTheme.successColor : AppTheme.primaryColor,
-          ),
+          Obx(() {
+            final selectedTest = testController.selectedTestType;
+            return Icon(
+              selectedTest != null ? Icons.check_circle : Icons.analytics,
+              size: 80,
+              color: selectedTest != null ? AppTheme.successColor : AppTheme.primaryColor,
+            );
+          }),
           const SizedBox(height: 24),
-          Text(
-            selectedTest != null ? 'Test Seçildi' : 'Test Türü Seç',
-            style: Get.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          if (selectedTest != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.darkCard,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    selectedTest.turkishName,
-                    style: Get.textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    selectedTest.code,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          else
-            Text(
-              'Uygulanacak test türünü seçmeniz gerekiyor.',
-              style: Get.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
+          Obx(() {
+            final selectedTest = testController.selectedTestType;
+            return Text(
+              selectedTest != null ? 'Test Seçildi' : 'Test Türü Seç',
+              style: Get.textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
-            ),
+            );
+          }),
+          const SizedBox(height: 16),
+          Obx(() {
+            final selectedTest = testController.selectedTestType;
+            if (selectedTest != null) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkCard,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      selectedTest.turkishName,
+                      style: Get.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      selectedTest.code,
+                      style: TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              return Text(
+                'Uygulanacak test türünü seçmeniz gerekiyor.',
+                style: Get.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              );
+            }
+          }),
           const SizedBox(height: 32),
-          if (selectedTest == null)
-            ElevatedButton.icon(
-              onPressed: () => Get.toNamed('/test-selection'),
-              icon: Icon(Icons.analytics),
-              label: Text('Test Seç'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              ),
-            ),
+          Obx(() {
+            if (testController.selectedTestType == null) {
+              return ElevatedButton.icon(
+                onPressed: () => Get.toNamed('/test-selection'),
+                icon: Icon(Icons.analytics),
+                label: Text('Test Seç'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
     );
   }
 
   Widget _buildCalibrationStep(TestController testController) {
-    return Obx(() {
-      final isCalibrated = testController.isCalibrated;
-      final progress = testController.calibrationProgress;
-      final isLoading = testController.isLoading;
-      
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 50),
-            // Calibration icon
-            Container(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 50),
+          // Calibration icon
+          Obx(() {
+            final isCalibrated = testController.isCalibrated;
+            return Container(
               width: 100,
               height: 100,
               decoration: BoxDecoration(
@@ -558,20 +581,26 @@ class TestExecutionScreen extends StatelessWidget {
                 size: 50,
                 color: isCalibrated ? AppTheme.successColor : AppTheme.primaryColor,
               ),
-            ),
-            const SizedBox(height: 24),
-            
-            Text(
+            );
+          }),
+          const SizedBox(height: 24),
+          
+          Obx(() {
+            final isCalibrated = testController.isCalibrated;
+            return Text(
               isCalibrated ? 'Kalibrasyon Tamamlandı' : 'Platform Kalibrasyonu',
               style: Get.textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            
-            Text(
+            );
+          }),
+          const SizedBox(height: 16),
+          
+          Obx(() {
+            final isCalibrated = testController.isCalibrated;
+            return Text(
               isCalibrated 
                   ? 'Force plate kalibrasyonu başarıyla tamamlandı. Devam etmek için İleri butonuna tıklayın.'
                   : 'Doğru ölçüm için platformların sıfır noktasını kalibre edeceğiz. Platform üzerinde kimse yokken kalibrasyon başlatın.',
@@ -579,12 +608,17 @@ class TestExecutionScreen extends StatelessWidget {
                 color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
+            );
+          }),
+          const SizedBox(height: 32),
+          
+          // Progress indicator
+          Obx(() {
+            final isLoading = testController.isLoading;
+            final progress = testController.calibrationProgress;
             
-            // Progress indicator
-            if (isLoading) ...[
-              Container(
+            if (isLoading) {
+              return Container(
                 width: 200,
                 child: Column(
                   children: [
@@ -603,48 +637,47 @@ class TestExecutionScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-            ] else if (!isCalibrated) ...[
-              ElevatedButton.icon(
+              );
+            } else if (!testController.isCalibrated) {
+              return ElevatedButton.icon(
                 onPressed: () => testController.startCalibration(),
                 icon: Icon(Icons.play_arrow),
                 label: Text('Kalibrasyonu Başlat'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 ),
-              ),
-            ],
-            
-            const SizedBox(height: 32),
-            // Force plate visualization
-            Container(
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+          
+          const SizedBox(height: 32),
+          // Force plate visualization
+          Container(
+            height: 150,
+            child: const ForcePlateWidget(
+              width: double.infinity,
               height: 150,
-              child: const ForcePlateWidget(
-                width: double.infinity,
-                height: 150,
-                showCOP: false,
-                showForceValues: false,
-                showAsymmetry: false,
-              ),
+              showCOP: false,
+              showForceValues: false,
+              showAsymmetry: false,
             ),
-          ],
-        ),
-      );
-    });
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildWeightMeasurementStep(TestController testController) {
-    return Obx(() {
-      final isWeightStable = testController.isWeightStable;
-      final measuredWeight = testController.measuredWeight;
-      
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 50),
-            // Weight icon
-            Container(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 50),
+          // Weight icon
+          Obx(() {
+            final isWeightStable = testController.isWeightStable;
+            return Container(
               width: 100,
               height: 100,
               decoration: BoxDecoration(
@@ -658,21 +691,26 @@ class TestExecutionScreen extends StatelessWidget {
                 size: 50,
                 color: isWeightStable ? AppTheme.successColor : AppTheme.warningColor,
               ),
-            ),
-            const SizedBox(height: 24),
-            
-            Text(
+            );
+          }),
+          const SizedBox(height: 24),
+          
+          Obx(() {
+            return Text(
               testController.weightStatus,
               style: Get.textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            
-            if (measuredWeight != null) ...[
-              Container(
+            );
+          }),
+          const SizedBox(height: 16),
+          
+          Obx(() {
+            final measuredWeight = testController.measuredWeight;
+            if (measuredWeight != null) {
+              return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppTheme.darkCard,
@@ -695,11 +733,17 @@ class TestExecutionScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+          const SizedBox(height: 16),
+          
+          Obx(() {
+            final isWeightStable = testController.isWeightStable;
+            final measuredWeight = testController.measuredWeight;
             
-            Text(
+            return Text(
               isWeightStable 
                   ? 'Ağırlık ölçümü kararlı. Test başlatmaya hazırsınız.'
                   : 'Platformlara çıkın ve sabit durun. Ağırlığınız ölçülüyor...',
@@ -707,69 +751,79 @@ class TestExecutionScreen extends StatelessWidget {
                 color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
-            ),
+            );
+          }),
+          
+          // Weight stability indicator
+          Obx(() {
+            final isWeightStable = testController.isWeightStable;
+            final measuredWeight = testController.measuredWeight;
             
-            // Weight stability indicator
-            if (!isWeightStable && measuredWeight != null) ...[
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            if (!isWeightStable && measuredWeight != null) {
+              return Column(
                 children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(AppTheme.warningColor),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Stabilite bekleniyor...',
-                    style: TextStyle(
-                      color: AppTheme.warningColor,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppTheme.warningColor),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Stabilite bekleniyor...',
+                        style: TextStyle(
+                          color: AppTheme.warningColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-            
-            const SizedBox(height: 32),
-            // Force plate visualization
-            Container(
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+          
+          const SizedBox(height: 32),
+          // Force plate visualization
+          Container(
+            height: 150,
+            child: const ForcePlateWidget(
+              width: double.infinity,
               height: 150,
-              child: const ForcePlateWidget(
-                width: double.infinity,
-                height: 150,
-                showCOP: true,
-                showForceValues: true,
-                showAsymmetry: true,
-              ),
+              showCOP: true,
+              showForceValues: true,
+              showAsymmetry: true,
             ),
-          ],
-        ),
-      );
-    });
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTestExecutionStep(TestController testController) {
-    return Obx(() {
-      final isTestRunning = testController.isTestRunning;
-      final testDuration = testController.testDuration;
-      
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Test status and timer
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.darkCard,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Test status and timer
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Obx(() {
+              final isTestRunning = testController.isTestRunning;
+              final testDuration = testController.testDuration;
+              
+              return Row(
                 children: [
                   // Status indicator
                   Container(
@@ -818,58 +872,56 @@ class TestExecutionScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Phase indicator
-            Container(
+              );
+            }),
+          ),
+          const SizedBox(height: 16),
+          
+          // Phase indicator
+          Container(
+            height: 80,
+            child: PhaseIndicatorWidget(
+              style: PhaseIndicatorStyle.horizontal,
               height: 80,
-              child: PhaseIndicatorWidget(
-                style: PhaseIndicatorStyle.horizontal,
-                height: 80,
-              ),
             ),
-            const SizedBox(height: 16),
-            
-            // Force plate visualization
-            Container(
+          ),
+          const SizedBox(height: 16),
+          
+          // Force plate visualization
+          Container(
+            height: 200,
+            child: const ForcePlateWidget(
+              width: double.infinity,
               height: 200,
-              child: const ForcePlateWidget(
-                width: double.infinity,
-                height: 200,
-                showCOP: true,
-                showForceValues: true,
-                showAsymmetry: true,
-              ),
+              showCOP: true,
+              showForceValues: true,
+              showAsymmetry: true,
             ),
-            const SizedBox(height: 16),
-            
-            // Real-time metrics
-            Container(
-              height: 300,
-              child: MetricsDisplayWidget(
-                isRealTime: true,
-                style: MetricDisplayStyle.grid,
-                maxMetrics: 6,
-                priorityMetrics: const [
-                  'peakForce',
-                  'currentForce',
-                  'asymmetryIndex',
-                  'sampleCount',
-                ],
-              ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Real-time metrics
+          Container(
+            height: 300,
+            child: MetricsDisplayWidget(
+              isRealTime: true,
+              style: MetricDisplayStyle.grid,
+              maxMetrics: 6,
+              priorityMetrics: const [
+                'peakForce',
+                'currentForce',
+                'asymmetryIndex',
+                'sampleCount',
+              ],
             ),
-          ],
-        ),
-      );
-    });
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildResultsStep(TestController testController) {
     return Obx(() {
-      final testResults = testController.testResults;
-      
       if (testController.isProcessingResults) {
         return Center(
           child: Column(
@@ -902,6 +954,8 @@ class TestExecutionScreen extends StatelessWidget {
           ),
         );
       }
+      
+      final testResults = testController.testResults;
       
       if (testResults == null) {
         return Center(
@@ -1050,9 +1104,9 @@ class TestExecutionScreen extends StatelessWidget {
   }
 
   Widget _buildMainActionButton(TestStep currentStep, TestController testController) {
-    return Obx(() {
-      switch (currentStep) {
-        case TestStep.deviceConnection:
+    switch (currentStep) {
+      case TestStep.deviceConnection:
+        return Obx(() {
           if (!testController.isConnected) {
             return ElevatedButton.icon(
               onPressed: testController.connectionStatus == ConnectionStatus.connecting 
@@ -1078,17 +1132,19 @@ class TestExecutionScreen extends StatelessWidget {
             icon: Icon(Icons.arrow_forward),
             label: Text('İleri'),
           );
-          
-        case TestStep.athleteSelection:
-          return ElevatedButton.icon(
-            onPressed: testController.selectedAthlete != null 
-                ? () => testController.proceedToTestSelection()
-                : null,
-            icon: Icon(Icons.arrow_forward),
-            label: Text('İleri'),
-          );
-          
-        case TestStep.testSelection:
+        });
+        
+      case TestStep.athleteSelection:
+        return ElevatedButton.icon(
+          onPressed: testController.selectedAthlete != null 
+              ? () => testController.proceedToTestSelection()
+              : null,
+          icon: Icon(Icons.arrow_forward),
+          label: Text('İleri'),
+        );
+        
+      case TestStep.testSelection:
+        return Obx(() {
           return ElevatedButton.icon(
             onPressed: testController.selectedTestType != null 
                 ? () => testController.proceedToCalibration()
@@ -1096,8 +1152,10 @@ class TestExecutionScreen extends StatelessWidget {
             icon: Icon(Icons.arrow_forward),
             label: Text('İleri'),
           );
-          
-        case TestStep.calibration:
+        });
+        
+      case TestStep.calibration:
+        return Obx(() {
           if (!testController.isCalibrated) {
             return ElevatedButton.icon(
               onPressed: testController.isLoading 
@@ -1129,8 +1187,10 @@ class TestExecutionScreen extends StatelessWidget {
             icon: Icon(Icons.arrow_forward),
             label: Text('İleri'),
           );
-          
-        case TestStep.weightMeasurement:
+        });
+        
+      case TestStep.weightMeasurement:
+        return Obx(() {
           // Debug için - ağırlık stabil değilse manuel buton göster
           return ElevatedButton.icon(
             onPressed: testController.isWeightStable 
@@ -1157,8 +1217,10 @@ class TestExecutionScreen extends StatelessWidget {
                   : AppTheme.warningColor,
             ),
           );
-          
-        case TestStep.testExecution:
+        });
+        
+      case TestStep.testExecution:
+        return Obx(() {
           if (!testController.isTestRunning) {
             return ElevatedButton.icon(
               onPressed: () => testController.startTest(),
@@ -1178,29 +1240,29 @@ class TestExecutionScreen extends StatelessWidget {
               ),
             );
           }
-          
-        case TestStep.results:
-          return Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _shareResults(testController),
-                  icon: Icon(Icons.share),
-                  label: Text('Paylaş'),
-                ),
+        });
+        
+      case TestStep.results:
+        return Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _shareResults(testController),
+                icon: Icon(Icons.share),
+                label: Text('Paylaş'),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _finishTest(testController),
-                  icon: Icon(Icons.check),
-                  label: Text('Bitir'),
-                ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _finishTest(testController),
+                icon: Icon(Icons.check),
+                label: Text('Bitir'),
               ),
-            ],
-          );
-      }
-    });
+            ),
+          ],
+        );
+    }
   }
 
   // Helper methods
