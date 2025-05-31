@@ -522,473 +522,482 @@ class TestExecutionScreen extends StatelessWidget {
   }
 
   Widget _buildCalibrationStep(TestController testController) {
-    final isCalibrated = testController.isCalibrated;
-    final progress = testController.calibrationProgress;
-    
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Calibration status
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Calibration icon
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: isCalibrated 
-                        ? AppTheme.successColor.withOpacity(0.2)
-                        : AppTheme.primaryColor.withOpacity(0.2),
-                    shape: BoxShape.circle,
+    return Obx(() {
+      final isCalibrated = testController.isCalibrated;
+      final progress = testController.calibrationProgress;
+      final isLoading = testController.isLoading;
+      
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // Calibration status
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Calibration icon
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: isCalibrated 
+                          ? AppTheme.successColor.withOpacity(0.2)
+                          : AppTheme.primaryColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isCalibrated ? Icons.check_circle : Icons.tune,
+                      size: 50,
+                      color: isCalibrated ? AppTheme.successColor : AppTheme.primaryColor,
+                    ),
                   ),
-                  child: Icon(
-                    isCalibrated ? Icons.check_circle : Icons.tune,
-                    size: 50,
-                    color: isCalibrated ? AppTheme.successColor : AppTheme.primaryColor,
+                  const SizedBox(height: 24),
+                  
+                  Text(
+                    isCalibrated ? 'Kalibrasyon Tamamlandı' : 'Platform Kalibrasyonu',
+                    style: Get.textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 24),
-                
-                Text(
-                  isCalibrated ? 'Kalibrasyon Tamamlandı' : 'Platform Kalibrasyonu',
-                  style: Get.textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 16),
+                  
+                  Text(
+                    isCalibrated 
+                        ? 'Force plate kalibrasyonu başarıyla tamamlandı. Devam etmek için İleri butonuna tıklayın.'
+                        : 'Doğru ölçüm için platformların sıfır noktasını kalibre edeceğiz. Platform üzerinde kimse yokken kalibrasyon başlatın.',
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                
-                Text(
-                  isCalibrated 
-                      ? 'Force plate kalibrasyonu başarıyla tamamlandı. Devam etmek için İleri butonuna tıklayın.'
-                      : 'Doğru ölçüm için platformların sıfır noktasını kalibre edeceğiz. Platform üzerinde kimse yokken kalibrasyon başlatın.',
-                  style: Get.textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                
-                // Progress indicator
-                if (testController.isLoading) ...[
-                  SizedBox(
-                    width: 200,
-                    child: Column(
-                      children: [
-                        LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: AppTheme.darkDivider,
-                          valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${(progress * 100).toStringAsFixed(0)}% Tamamlandı',
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
+                  const SizedBox(height: 32),
+                  
+                  // Progress indicator
+                  if (isLoading) ...[
+                    SizedBox(
+                      width: 200,
+                      child: Column(
+                        children: [
+                          LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: AppTheme.darkDivider,
+                            valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Text(
+                            '${(progress * 100).toStringAsFixed(0)}% Tamamlandı',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ] else if (!isCalibrated) ...[
-                  ElevatedButton.icon(
-                    onPressed: () => testController.startCalibration(),
-                    icon: Icon(Icons.play_arrow),
-                    label: Text('Kalibrasyonu Başlat'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  ] else if (!isCalibrated) ...[
+                    ElevatedButton.icon(
+                      onPressed: () => testController.startCalibration(),
+                      icon: Icon(Icons.play_arrow),
+                      label: Text('Kalibrasyonu Başlat'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          
-          // Force plate visualization
-          const ForcePlateWidget(
-            width: double.infinity,
-            height: 150,
-            showCOP: false,
-            showForceValues: false,
-            showAsymmetry: false,
-          ),
-        ],
-      ),
-    );
+            
+            // Force plate visualization
+            const ForcePlateWidget(
+              width: double.infinity,
+              height: 150,
+              showCOP: false,
+              showForceValues: false,
+              showAsymmetry: false,
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildWeightMeasurementStep(TestController testController) {
-    final isWeightStable = testController.isWeightStable;
-    final measuredWeight = testController.measuredWeight;
-    
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Weight measurement status
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Weight icon
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: isWeightStable 
-                        ? AppTheme.successColor.withOpacity(0.2)
-                        : AppTheme.warningColor.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isWeightStable ? Icons.check_circle : Icons.monitor_weight,
-                    size: 50,
-                    color: isWeightStable ? AppTheme.successColor : AppTheme.warningColor,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                Text(
-                  testController.weightStatus,
-                  style: Get.textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                
-                if (measuredWeight != null) ...[
+    return Obx(() {
+      final isWeightStable = testController.isWeightStable;
+      final measuredWeight = testController.measuredWeight;
+      
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // Weight measurement status
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Weight icon
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    width: 100,
+                    height: 100,
                     decoration: BoxDecoration(
-                      color: AppTheme.darkCard,
-                      borderRadius: BorderRadius.circular(12),
+                      color: isWeightStable 
+                          ? AppTheme.successColor.withOpacity(0.2)
+                          : AppTheme.warningColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Icon(
+                      isWeightStable ? Icons.check_circle : Icons.monitor_weight,
+                      size: 50,
+                      color: isWeightStable ? AppTheme.successColor : AppTheme.warningColor,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  Text(
+                    testController.weightStatus,
+                    style: Get.textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  if (measuredWeight != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkCard,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.monitor_weight,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${measuredWeight.toStringAsFixed(1)} kg',
+                            style: Get.textTheme.headlineMedium?.copyWith(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  Text(
+                    isWeightStable 
+                        ? 'Ağırlık ölçümü kararlı. Test başlatmaya hazırsınız.'
+                        : 'Platformlara çıkın ve sabit durun. Ağırlığınız ölçülüyor...',
+                    style: Get.textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  
+                  // Weight stability indicator
+                  if (!isWeightStable && measuredWeight != null) ...[
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.monitor_weight,
-                          color: AppTheme.primaryColor,
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(AppTheme.warningColor),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          '${measuredWeight.toStringAsFixed(1)} kg',
-                          style: Get.textTheme.headlineMedium?.copyWith(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.bold,
+                          'Stabilite bekleniyor...',
+                          style: TextStyle(
+                            color: AppTheme.warningColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            
+            // Force plate visualization
+            const ForcePlateWidget(
+              width: double.infinity,
+              height: 150,
+              showCOP: true,
+              showForceValues: true,
+              showAsymmetry: true,
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildTestExecutionStep(TestController testController) {
+    return Obx(() {
+      final isTestRunning = testController.isTestRunning;
+      final testDuration = testController.testDuration;
+      final currentPhase = testController.currentPhase;
+      
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Test status and timer
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  // Status indicator
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isTestRunning 
+                          ? AppTheme.successColor.withOpacity(0.2)
+                          : AppTheme.primaryColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isTestRunning ? Icons.play_circle : Icons.play_circle_outline,
+                      color: isTestRunning ? AppTheme.successColor : AppTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isTestRunning ? 'Test Devam Ediyor' : 'Test Başlatmaya Hazır',
+                          style: Get.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '${testDuration.inSeconds}.${(testDuration.inMilliseconds % 1000 ~/ 100)}s',
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-                
-                Text(
-                  isWeightStable 
-                      ? 'Ağırlık ölçümü kararlı. Test başlatmaya hazırsınız.'
-                      : 'Platformlara çıkın ve sabit durun. Ağırlığınız ölçülüyor...',
-                  style: Get.textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                // Weight stability indicator
-                if (!isWeightStable && measuredWeight != null) ...[
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppTheme.warningColor),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Stabilite bekleniyor...',
-                        style: TextStyle(
-                          color: AppTheme.warningColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  
+                  // Sample count
+                  Text(
+                    '${testController.sampleCount} örnek',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
-          
-          // Force plate visualization
-          const ForcePlateWidget(
-            width: double.infinity,
-            height: 150,
-            showCOP: true,
-            showForceValues: true,
-            showAsymmetry: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTestExecutionStep(TestController testController) {
-    final isTestRunning = testController.isTestRunning;
-    final testDuration = testController.testDuration;
-    final currentPhase = testController.currentPhase;
-    
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Test status and timer
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.darkCard,
-              borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 16),
+            
+            // Phase indicator
+            PhaseIndicatorWidget(
+              style: PhaseIndicatorStyle.horizontal,
+              height: 80,
             ),
-            child: Row(
-              children: [
-                // Status indicator
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: isTestRunning 
-                        ? AppTheme.successColor.withOpacity(0.2)
-                        : AppTheme.primaryColor.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isTestRunning ? Icons.play_circle : Icons.play_circle_outline,
-                    color: isTestRunning ? AppTheme.successColor : AppTheme.primaryColor,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isTestRunning ? 'Test Devam Ediyor' : 'Test Başlatmaya Hazır',
-                        style: Get.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${testDuration.inSeconds}.${(testDuration.inMilliseconds % 1000 ~/ 100)}s',
-                        style: Get.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Sample count
-                Text(
-                  '${testController.sampleCount} örnek',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            
+            // Force plate visualization
+            const ForcePlateWidget(
+              width: double.infinity,
+              height: 200,
+              showCOP: true,
+              showForceValues: true,
+              showAsymmetry: true,
             ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Phase indicator
-          PhaseIndicatorWidget(
-            style: PhaseIndicatorStyle.horizontal,
-            height: 80,
-          ),
-          const SizedBox(height: 16),
-          
-          // Force plate visualization
-          const ForcePlateWidget(
-            width: double.infinity,
-            height: 200,
-            showCOP: true,
-            showForceValues: true,
-            showAsymmetry: true,
-          ),
-          const SizedBox(height: 16),
-          
-          // Real-time metrics
-          Expanded(
-            child: MetricsDisplayWidget(
-              isRealTime: true,
-              style: MetricDisplayStyle.grid,
-              maxMetrics: 6,
-              priorityMetrics: const [
-                'peakForce',
-                'currentForce',
-                'asymmetryIndex',
-                'sampleCount',
-              ],
+            const SizedBox(height: 16),
+            
+            // Real-time metrics
+            Expanded(
+              child: MetricsDisplayWidget(
+                isRealTime: true,
+                style: MetricDisplayStyle.grid,
+                maxMetrics: 6,
+                priorityMetrics: const [
+                  'peakForce',
+                  'currentForce',
+                  'asymmetryIndex',
+                  'sampleCount',
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildResultsStep(TestController testController) {
-    final testResults = testController.testResults;
-    
-    if (testController.isProcessingResults) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 80,
-              height: 80,
-              child: CircularProgressIndicator(
-                strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
+    return Obx(() {
+      final testResults = testController.testResults;
+      
+      if (testController.isProcessingResults) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4,
+                  valueColor: AlwaysStoppedAnimation(AppTheme.primaryColor),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Sonuçlar İşleniyor...',
-              style: Get.textTheme.titleLarge?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 24),
+              Text(
+                'Sonuçlar İşleniyor...',
+                style: Get.textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Metrikler hesaplanıyor ve kaydediliyor',
-              style: Get.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
+              const SizedBox(height: 8),
+              Text(
+                'Metrikler hesaplanıyor ve kaydediliyor',
+                style: Get.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    }
-    
-    if (testResults == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 80,
-              color: AppTheme.errorColor,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Sonuç Bulunamadı',
-              style: Get.textTheme.titleLarge?.copyWith(
+            ],
+          ),
+        );
+      }
+      
+      if (testResults == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 80,
                 color: AppTheme.errorColor,
-                fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Test sonuçları işlenirken bir hata oluştu.',
-              style: Get.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
+              const SizedBox(height: 24),
+              Text(
+                'Sonuç Bulunamadı',
+                style: Get.textTheme.titleLarge?.copyWith(
+                  color: AppTheme.errorColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    }
-    
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Results header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.darkCard,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.analytics,
-                  color: AppTheme.successColor,
-                  size: 32,
+              const SizedBox(height: 8),
+              Text(
+                'Test sonuçları işlenirken bir hata oluştu.',
+                style: Get.textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary,
                 ),
-                const SizedBox(width: 16),
-                
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Test Tamamlandı!',
-                        style: Get.textTheme.titleLarge?.copyWith(
-                          color: AppTheme.successColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '${testResults.testType.turkishName} • ${testResults.duration.inSeconds}s',
-                        style: Get.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
+              ),
+            ],
+          ),
+        );
+      }
+      
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Results header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.analytics,
+                    color: AppTheme.successColor,
+                    size: 32,
                   ),
-                ),
-                
-                // Quality badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Color(int.parse(testResults.quality.colorHex.replaceFirst('#', '0xFF'))).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    testResults.quality.turkishName,
-                    style: TextStyle(
-                      color: Color(int.parse(testResults.quality.colorHex.replaceFirst('#', '0xFF'))),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 16),
+                  
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Test Tamamlandı!',
+                          style: Get.textTheme.titleLarge?.copyWith(
+                            color: AppTheme.successColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${testResults.testType.turkishName} • ${testResults.duration.inSeconds}s',
+                          style: Get.textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  
+                  // Quality badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Color(int.parse(testResults.quality.colorHex.replaceFirst('#', '0xFF'))).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      testResults.quality.turkishName,
+                      style: TextStyle(
+                        color: Color(int.parse(testResults.quality.colorHex.replaceFirst('#', '0xFF'))),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Test metrics
-          Expanded(
-            child: MetricsDisplayWidget(
-              metrics: testResults.metrics,
-              isRealTime: false,
-              style: MetricDisplayStyle.detailed,
-              maxMetrics: 12,
+            const SizedBox(height: 16),
+            
+            // Test metrics
+            Expanded(
+              child: MetricsDisplayWidget(
+                metrics: testResults.metrics,
+                isRealTime: false,
+                style: MetricDisplayStyle.detailed,
+                maxMetrics: 12,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildBottomActions(TestStep currentStep, TestController testController) {
@@ -1029,146 +1038,148 @@ class TestExecutionScreen extends StatelessWidget {
   }
 
   Widget _buildMainActionButton(TestStep currentStep, TestController testController) {
-    switch (currentStep) {
-      case TestStep.deviceConnection:
-        if (!testController.isConnected) {
+    return Obx(() {
+      switch (currentStep) {
+        case TestStep.deviceConnection:
+          if (!testController.isConnected) {
+            return ElevatedButton.icon(
+              onPressed: testController.connectionStatus == ConnectionStatus.connecting 
+                  ? null 
+                  : () => testController.connectToDevice('USB_ForcePlate_001'),
+              icon: testController.connectionStatus == ConnectionStatus.connecting
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(Colors.white),
+                      ),
+                    )
+                  : Icon(Icons.link),
+              label: Text(testController.connectionStatus == ConnectionStatus.connecting 
+                  ? 'Bağlanıyor...' 
+                  : 'Bağlan'),
+            );
+          }
           return ElevatedButton.icon(
-            onPressed: testController.connectionStatus == ConnectionStatus.connecting 
-                ? null 
-                : () => testController.connectToDevice('USB_ForcePlate_001'),
-            icon: testController.connectionStatus == ConnectionStatus.connecting
-                ? SizedBox(
+            onPressed: () => testController.proceedToAthleteSelection(),
+            icon: Icon(Icons.arrow_forward),
+            label: Text('İleri'),
+          );
+          
+        case TestStep.athleteSelection:
+          return ElevatedButton.icon(
+            onPressed: testController.selectedAthlete != null 
+                ? () => testController.proceedToTestSelection()
+                : null,
+            icon: Icon(Icons.arrow_forward),
+            label: Text('İleri'),
+          );
+          
+        case TestStep.testSelection:
+          return ElevatedButton.icon(
+            onPressed: testController.selectedTestType != null 
+                ? () => testController.proceedToCalibration()
+                : null,
+            icon: Icon(Icons.arrow_forward),
+            label: Text('İleri'),
+          );
+          
+        case TestStep.calibration:
+          if (!testController.isCalibrated) {
+            return ElevatedButton.icon(
+              onPressed: testController.isLoading 
+                  ? null 
+                  : () => testController.startCalibration(),
+              icon: testController.isLoading 
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(Colors.white),
+                      ),
+                    )
+                  : Icon(Icons.tune),
+              label: Text(testController.isLoading ? 'Kalibrasyon...' : 'Kalibre Et'),
+            );
+          }
+          return ElevatedButton.icon(
+            onPressed: () => testController.proceedToWeightMeasurement(),
+            icon: Icon(Icons.arrow_forward),
+            label: Text('İleri'),
+          );
+          
+        case TestStep.weightMeasurement:
+          if (!testController.isWeightStable) {
+            return ElevatedButton(
+              onPressed: null,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                      valueColor: AlwaysStoppedAnimation(Colors.white54),
                     ),
-                  )
-                : Icon(Icons.link),
-            label: Text(testController.connectionStatus == ConnectionStatus.connecting 
-                ? 'Bağlanıyor...' 
-                : 'Bağlan'),
-          );
-        }
-        return ElevatedButton.icon(
-          onPressed: () => testController.proceedToTestSelection(),
-          icon: Icon(Icons.arrow_forward),
-          label: Text('İleri'),
-        );
-        
-      case TestStep.athleteSelection:
-        return ElevatedButton.icon(
-          onPressed: testController.selectedAthlete != null 
-              ? () => testController.proceedToTestSelection()
-              : null,
-          icon: Icon(Icons.arrow_forward),
-          label: Text('İleri'),
-        );
-        
-      case TestStep.testSelection:
-        return ElevatedButton.icon(
-          onPressed: testController.selectedTestType != null 
-              ? () => testController.proceedToCalibration()
-              : null,
-          icon: Icon(Icons.arrow_forward),
-          label: Text('İleri'),
-        );
-        
-      case TestStep.calibration:
-        if (!testController.isCalibrated) {
-          return ElevatedButton.icon(
-            onPressed: testController.isLoading 
-                ? null 
-                : () => testController.startCalibration(),
-            icon: testController.isLoading 
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(Colors.white),
-                    ),
-                  )
-                : Icon(Icons.tune),
-            label: Text(testController.isLoading ? 'Kalibrasyon...' : 'Kalibre Et'),
-          );
-        }
-        return ElevatedButton.icon(
-          onPressed: () => testController.proceedToWeightMeasurement(),
-          icon: Icon(Icons.arrow_forward),
-          label: Text('İleri'),
-        );
-        
-      case TestStep.weightMeasurement:
-        if (!testController.isWeightStable) {
-          return ElevatedButton(
-            onPressed: null,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Colors.white54),
                   ),
+                  const SizedBox(width: 8),
+                  Text('Stabilite Bekleniyor...'),
+                ],
+              ),
+            );
+          }
+          return ElevatedButton.icon(
+            onPressed: () => testController.proceedToTestExecution(),
+            icon: Icon(Icons.arrow_forward),
+            label: Text('Test Başlat'),
+          );
+          
+        case TestStep.testExecution:
+          if (!testController.isTestRunning) {
+            return ElevatedButton.icon(
+              onPressed: () => testController.startTest(),
+              icon: Icon(Icons.play_arrow),
+              label: Text('Testi Başlat'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.successColor,
+              ),
+            );
+          } else {
+            return ElevatedButton.icon(
+              onPressed: () => testController.stopTest(),
+              icon: Icon(Icons.stop),
+              label: Text('Testi Durdur'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorColor,
+              ),
+            );
+          }
+          
+        case TestStep.results:
+          return Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _shareResults(testController),
+                  icon: Icon(Icons.share),
+                  label: Text('Paylaş'),
                 ),
-                const SizedBox(width: 8),
-                Text('Stabilite Bekleniyor...'),
-              ],
-            ),
-          );
-        }
-        return ElevatedButton.icon(
-          onPressed: () => testController.proceedToTestExecution(),
-          icon: Icon(Icons.arrow_forward),
-          label: Text('Test Başlat'),
-        );
-        
-      case TestStep.testExecution:
-        if (!testController.isTestRunning) {
-          return ElevatedButton.icon(
-            onPressed: () => testController.startTest(),
-            icon: Icon(Icons.play_arrow),
-            label: Text('Testi Başlat'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
-        } else {
-          return ElevatedButton.icon(
-            onPressed: () => testController.stopTest(),
-            icon: Icon(Icons.stop),
-            label: Text('Testi Durdur'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
-        }
-        
-      case TestStep.results:
-        return Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _shareResults(testController),
-                icon: Icon(Icons.share),
-                label: Text('Paylaş'),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _finishTest(testController),
-                icon: Icon(Icons.check),
-                label: Text('Bitir'),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _finishTest(testController),
+                  icon: Icon(Icons.check),
+                  label: Text('Bitir'),
+                ),
               ),
-            ),
-          ],
-        );
-    }
+            ],
+          );
+      }
+    });
   }
 
   // Helper methods
