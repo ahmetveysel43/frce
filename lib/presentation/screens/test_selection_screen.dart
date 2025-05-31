@@ -32,7 +32,7 @@ class TestSelectionScreen extends StatelessWidget {
                   _buildSelectedAthleteCard(selectedAthlete),
                   
                   // Test categories
-                  Expanded(
+                  Expanded( 
                     child: _buildTestCategories(selectedAthlete, testController),
                   ),
                 ],
@@ -236,13 +236,13 @@ class TestSelectionScreen extends StatelessWidget {
   }
 
   Widget _buildTestCategories(Athlete athlete, TestController testController) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return SingleChildScrollView( // Outer SingleChildScrollView for the whole content
+      padding: const EdgeInsets.all(16), // Padding for the whole content
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Recommended tests section
-          _buildRecommendedTestsSection(athlete, testController),
+          _buildRecommendedTestsSection(athlete, testController), // 'athlete' is the parameter
           const SizedBox(height: 24),
           
           // All test categories
@@ -258,7 +258,7 @@ class TestSelectionScreen extends StatelessWidget {
           ...TestCategory.values.map((category) =>
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: _buildTestCategoryCard(category, athlete, testController),
+              child: _buildTestCategoryCard(category, athlete, testController), // 'athlete' is the parameter
             ),
           ),
         ],
@@ -307,7 +307,7 @@ class TestSelectionScreen extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 1.5,
+            childAspectRatio: 1.2, // Adjusted for better fit, originally 1.5
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -428,7 +428,7 @@ class TestSelectionScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 1.8,
+                childAspectRatio: 1.4, // Adjusted for better fit, originally 1.8
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
@@ -574,7 +574,7 @@ class TestSelectionScreen extends StatelessWidget {
     }
   }
 
-  void _selectTest(TestType testType, TestController testController) {
+   void _selectTest(TestType testType, TestController testController) {
     // Test seç
     testController.selectTestType(testType);
     
@@ -587,8 +587,11 @@ class TestSelectionScreen extends StatelessWidget {
       duration: const Duration(seconds: 2),
     );
     
-    // Kalibrasyon ekranına git
-    Get.toNamed('/test-execution');
+    // Test akışını kalibrasyon adımına ilerlet
+    testController.proceedToCalibration(); 
+    
+    // Test yürütme ekranına git
+    Get.toNamed('/test-execution'); 
   }
 
   void _showTestInfo() {
