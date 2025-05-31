@@ -383,6 +383,18 @@ class TestController extends GetxController {
     }
   }
 
+  /// Debug için manuel weight stability fonksiyonu - EKLENEN METOD
+  void forceWeightStable() {
+    final athlete = _selectedAthlete.value;
+    final targetWeight = athlete?.weight ?? 70.0;
+    
+    _measuredWeight.value = targetWeight;
+    _isWeightStable.value = true;
+    _weightTimer?.cancel();
+    
+    AppLogger.info('🔧 Debug: Ağırlık stabilite manuel olarak sağlandı');
+  }
+
   void proceedToTestExecution() {
     if (!_isWeightStable.value) {
       _setError('Stabil ağırlık ölçümü gerekli');
